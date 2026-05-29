@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 import { printBill } from './PrintBill'
+import LoadingScreen from './LoadingScreen'
+import LandingPage from './LandingPage'
 
 const STATUS = {
   'Waiting':     { bg: '#FEF3E2', color: '#B45309', dot: '#F59E0B' },
@@ -64,6 +66,7 @@ function fromDb(row) {
 
 // ── APP ──────────────────────────────────────────────────────
 export default function App() {
+  const [appState, setAppState]       = useState('loading') // 'loading' | 'landing' | 'app'
   const [screen, setScreen]           = useState('list')
   const [jobs, setJobs]               = useState([])
   const [editingJob, setEditingJob]   = useState(null)
@@ -71,58 +74,30 @@ export default function App() {
   const [loading, setLoading]         = useState(true)
   const [error, setError]             = useState(null)
 
-  useEffect(() => { loadJobs() }, [])
-
-async function loadJobs() {
-  setLoading(true); setError(null)
-  const { data, error } = await supabase
-    .from('jobs').select('*').order('created_at', { ascending: false })
-  if (error) { setError('Could not load jobs.'); console.error(error) }
-  else {
-    const rows = data.map(fromDb)
-    setJobs(rows)
-
-    // Find the highest existing job number and set counter above it
-    const nums = data
-      .map(r => parseInt(r.id.split('-')[2]))
-      .filter(n => !isNaN(n))
-    counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
-  }
-  setLoading(false)
-}
-
-  function openNew()     { setEditingJob(null); setScreen('form') }
-  function openEdit(job) { setEditingJob(job);  setScreen('form') }
-  function openBill(job) { setBillingJob(job);  setScreen('bill') }
-
-  async function saveJob(form, vehicleType) {
-    const id  = editingJob ? editingJob.id : generateId()
-    const row = toDb(form, vehicleType, id)
-    if (editingJob) {
-      const { error } = await supabase.from('jobs').update(row).eq('id', id)
-      if (error) { alert('Error: ' + error.message); return }
-      setJobs(p => p.map(j => j.id === id ? fromDb(row) : j))
-    } else {
-      const { error } = await supabase.from('jobs').insert(row)
-      if (error) { alert('Error: ' + error.message); return }
-      setJobs(p => [fromDb(row), ...p])
+  useEffect(() => {
+  async function load() {
+    setLoading(true); setError(null)
+    const { data, error } = await supabase
+      .from('jobs').select('*').order('created_at', { ascending: false })
+    if (error) { setError('Could not load jobs.'); console.error(error) }
+    else {
+      const rows = data.map(fromDb)
+      setJobs(rows)
+      const nums = data
+        .map(r => parseInt(r.id.split('-')[2]))
+        .filter(n => !isNaN(n))
+      counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
     }
-    setScreen('list')
+    setLoading(false)
   }
+  load()
+}, [])
 
-  async function deleteJob(id) {
-    if (!window.confirm('Delete this job card?')) return
-    const { error } = await supabase.from('jobs').delete().eq('id', id)
-    if (error) { alert('Error: ' + error.message); return }
-    setJobs(p => p.filter(j => j.id !== id))
-  }
+  // show loading first, then landing
+  if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('landing')} />
+  if (appState === 'landing') return <LandingPage onEnter={() => setAppState('app')} />
 
-  async function updateStatus(id, status) {
-    const { error } = await supabase.from('jobs').update({ status }).eq('id', id)
-    if (error) { alert('Error: ' + error.message); return }
-    setJobs(p => p.map(j => j.id === id ? { ...j, status } : j))
-  }
-
+  // rest of your existing return logic below stays exactly the same...
   if (screen === 'form') return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} />
   if (screen === 'bill') return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
 
