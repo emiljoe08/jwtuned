@@ -119,7 +119,7 @@ export default function LandingPage({ onEnter }) {
     { name: 'Skoda', slug: 'skoda' },
     { name: 'Renault', slug: 'renault' },
     { name: 'BMW', slug: 'bmw' },
-    { name: 'Mercedes', slug: 'mercedes' },
+    { name: 'Mercedes', slug: 'mercedesbenz' },
     { name: 'Nissan', slug: 'nissan' },
   ]
   const marqueeBrands = [...brands, ...brands, ...brands, ...brands]
@@ -227,7 +227,7 @@ export default function LandingPage({ onEnter }) {
       {/* ── NAV ── */}
       <nav style={{ position:'sticky', top:0, zIndex:200, padding:'0 5%', height:68, display:'flex', alignItems:'center', justifyContent:'space-between', background: scrolled ? 'rgba(10,10,10,0.97)' : 'transparent', backdropFilter: scrolled ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : 'none', transition:'all 0.3s' }}>
         <div style={{ display:'flex', alignItems:'center' }}>
-          <img src='./src/assets/jwlogo.svg' alt="JW Tuned" style={{ height:38, objectFit:'contain' }} />
+          <img src={jwLogo} alt="JW Tuned" style={{ height:38, objectFit:'contain' }} />
         </div>
         <div className="desktop-nav" style={{ display:'flex', alignItems:'center', gap:28 }}>
           {['#services','#process','#about','#testimonials','#faq','#contact'].map((href,i) => (
