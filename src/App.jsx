@@ -4,6 +4,7 @@ import { supabase } from './supabase'
 import { printBill } from './PrintBill'
 import LoadingScreen from './LoadingScreen'
 import LandingPage from './LandingPage'
+import jwLogo from './assets/jwlogo.svg'
 
 const STATUS = {
   'Waiting':     { bg: '#FEF3E2', color: '#B45309', dot: '#F59E0B' },
@@ -127,7 +128,10 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
       <div style={{ background: 'linear-gradient(135deg, #185FA5 0%, #1E40AF 100%)', padding: '20px 16px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: 20 }}>🔧 JW Tuned</div>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src={jwLogo} alt="Logo" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+              JW Tuned
+            </div>
             <div style={{ color: '#93C5FD', fontSize: 12, marginTop: 2 }}>Garage Management</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>

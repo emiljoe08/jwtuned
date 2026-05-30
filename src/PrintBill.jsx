@@ -1,3 +1,5 @@
+import jwLogo from './assets/jwlogo.svg'
+
 export function printBill({ job, items, discount, paid, payMode, note }) {
   const subtotal  = items.reduce((s, i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.rate)||0), 0)
   const discAmt   = parseFloat(discount) || 0
@@ -276,7 +278,10 @@ export function printBill({ job, items, discount, paid, payMode, note }) {
       <!-- HEADER -->
       <div class="header">
         <div>
-          <div class="brand-name">🔧 JW Tuned</div>
+          <div class="brand-name" style="display: flex; align-items: center; gap: 8px;">
+            <img src="${jwLogo}" alt="Logo" style="width: 32px; height: 32px; object-fit: contain;" />
+            JW Tuned
+          </div>
           <div class="brand-sub">Professional Auto Service · Kottayam, Kerala</div>
           <div class="brand-sub">Phone: +91 XXXXX XXXXX</div>
         </div>
