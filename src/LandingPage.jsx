@@ -78,6 +78,8 @@ export default function LandingPage({ onEnter }) {
   const [activeService, setActiveService] = useState(null)
   const [formData, setFormData] = useState({ name: '', phone: '', message: '' })
   const [mousePos, setMousePos] = useState({ x: 0, y: 0, cx: 0, cy: 0, active: false })
+  const [clickPulse, setClickPulse] = useState(false)
+  const clickTimeout = useRef(null)
 
   function handleMouseMove(e) {
     const x = (e.clientX / window.innerWidth - 0.5) * 40;
@@ -160,6 +162,7 @@ export default function LandingPage({ onEnter }) {
         @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
         @keyframes pulse3d { 0%,100% { box-shadow: 0 0 0 0 rgba(232,49,10,0.4); } 50% { box-shadow: 0 0 0 20px rgba(232,49,10,0); } }
         @keyframes logoFloat { 0%, 100% { transform: scale(1); opacity: 0.015; } 50% { transform: scale(1.05); opacity: 0.03; } }
+        @keyframes logoRipple { 0% { transform: scale(1); opacity: 0.03; filter: blur(0px); } 50% { transform: scale(1.3); opacity: 0.15; filter: blur(4px); } 100% { transform: scale(1); opacity: 0.03; filter: blur(0px); } }
 
         .fade-up { animation: fadeUp 0.7s ease forwards; opacity: 0; }
         .d1 { animation-delay: 0.1s; } .d2 { animation-delay: 0.25s; }
@@ -172,6 +175,7 @@ export default function LandingPage({ onEnter }) {
         .brand-card:hover { background: rgba(232,49,10,0.1); border-color: rgba(232,49,10,0.3); transform: translateY(-4px); }
         .brand-card img { transition: all 0.25s ease; filter: brightness(0.5); }
         .brand-card:hover img { filter: brightness(1); }
+        .logo-ripple { animation: logoRipple 0.6s cubic-bezier(0.2, 1, 0.2, 1) !important; }
 
         .nav-link { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; transition: color 0.2s; }
         .nav-link:hover { color: #fff; }
@@ -255,7 +259,17 @@ export default function LandingPage({ onEnter }) {
       )}
 
       {/* ── HERO ── */}
-      <div style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', padding:'100px 5% 80px', overflow:'hidden' }} onMouseMove={handleMouseMove} onMouseLeave={() => setMousePos(p => ({ ...p, active: false }))}>
+      <div 
+        style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', padding:'100px 5% 80px', overflow:'hidden' }} 
+        onMouseMove={handleMouseMove} 
+        onMouseLeave={() => setMousePos(p => ({ ...p, active: false }))}
+        onClick={() => {
+          setClickPulse(false);
+          clearTimeout(clickTimeout.current);
+          setTimeout(() => setClickPulse(true), 10);
+          clickTimeout.current = setTimeout(() => setClickPulse(false), 600);
+        }}
+      >
 
         {/* Layered background */}
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg, #0A0A0A 0%, #0F0F0F 40%, #110808 100%)' }} />
@@ -271,6 +285,7 @@ export default function LandingPage({ onEnter }) {
               width: 'clamp(300px, 45vw, 700px)',
               animation: 'logoFloat 12s ease-in-out infinite'
             }}
+            className={clickPulse ? 'logo-ripple' : ''}
           />
         </div>
 
