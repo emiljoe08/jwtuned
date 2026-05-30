@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import jwLogo from './assets/jwlogo.svg'
 
 const WhatsAppIcon = () => (
@@ -13,10 +13,69 @@ const InstagramIcon = () => (
   </svg>
 )
 
+// 3D Floating gear component
+function FloatingGear({ size, x, y, duration, opacity, blur }) {
+  return (
+    <div style={{
+      position: 'absolute', left: x, top: y,
+      width: size, height: size,
+      opacity,
+      filter: `blur(${blur || 0}px)`,
+      animation: `gearSpin ${duration}s linear infinite`,
+      pointerEvents: 'none',
+      zIndex: 0,
+    }}>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M43.3 5.8L40 20.2C37.3 21.1 34.8 22.4 32.5 24L18.7 18.7L7.2 30.2L12.5 44C11 46.3 9.7 48.8 8.8 51.5L-5.6 54.8V71.2L8.8 74.5C9.7 77.2 11 79.7 12.5 82L7.2 95.8L18.7 107.3L32.5 102C34.8 103.6 37.3 104.9 40 105.8L43.3 120.2H59.7L63 105.8C65.7 104.9 68.2 103.6 70.5 102L84.3 107.3L95.8 95.8L90.5 82C92 79.7 93.3 77.2 94.2 74.5L108.6 71.2V54.8L94.2 51.5C93.3 48.8 92 46.3 90.5 44L95.8 30.2L84.3 18.7L70.5 24C68.2 22.4 65.7 21.1 63 20.2L59.7 5.8H43.3ZM51.5 35C64.5 35 75 45.5 75 58.5C75 71.5 64.5 82 51.5 82C38.5 82 28 71.5 28 58.5C28 45.5 38.5 35 51.5 35Z" fill="rgba(232,49,10,0.15)" stroke="rgba(232,49,10,0.3)" strokeWidth="2"/>
+        <circle cx="51.5" cy="58.5" r="14" fill="rgba(232,49,10,0.1)" stroke="rgba(232,49,10,0.3)" strokeWidth="2"/>
+      </svg>
+    </div>
+  )
+}
+
+// 3D card with tilt effect
+function TiltCard({ children, style }) {
+  const ref = useRef(null)
+  function handleMove(e) {
+    const el = ref.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 12
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * -12
+    el.style.transform = `perspective(600px) rotateX(${y}deg) rotateY(${x}deg) scale(1.02)`
+  }
+  function handleLeave() {
+    if (ref.current) ref.current.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg) scale(1)'
+  }
+  return (
+    <div ref={ref} onMouseMove={handleMove} onMouseLeave={handleLeave}
+      style={{ transition: 'transform 0.15s ease', transformStyle: 'preserve-3d', ...style }}>
+      {children}
+    </div>
+  )
+}
+
+// FAQ item
+function FAQItem({ q, a }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+      <button onClick={() => setOpen(!open)} style={{ width: '100%', background: 'none', border: 'none', color: '#fff', fontFamily: 'inherit', fontSize: 'clamp(14px,2vw,16px)', fontWeight: 700, padding: '20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left', gap: 16 }}>
+        {q}
+        <span style={{ color: '#E8310A', fontSize: 22, flexShrink: 0, transition: 'transform 0.3s', transform: open ? 'rotate(45deg)' : 'none', display: 'inline-block' }}>+</span>
+      </button>
+      <div style={{ maxHeight: open ? 200 : 0, overflow: 'hidden', transition: 'max-height 0.35s ease' }}>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, paddingBottom: 20 }}>{a}</p>
+      </div>
+    </div>
+  )
+}
+
 export default function LandingPage({ onEnter }) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [activeService, setActiveService] = useState(0)
+  const [activeService, setActiveService] = useState(null)
+  const [formData, setFormData] = useState({ name: '', phone: '', message: '' })
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -25,12 +84,26 @@ export default function LandingPage({ onEnter }) {
   }, [])
 
   const services = [
-    { icon: '🔧', title: 'Full Service', short: 'Engine & Filters', desc: 'Complete periodic maintenance — engine oil, air filter, oil filter, spark plugs, coolant top-up, and full vehicle inspection.' },
-    //{ icon: '❄️', title: 'AC Service', short: 'Cooling System', desc: 'Gas refilling, compressor diagnostics, condenser cleaning, and full AC overhaul to keep you cool on Kerala roads.' },
-    //{ icon: '🛞', title: 'Tyres & Wheels', short: 'Alignment & Balancing', desc: 'Puncture repair, new tyre fitting, wheel balancing and four-wheel alignment for precise, smooth handling.' },
-    { icon: '⚡', title: 'Electricals', short: 'Wiring & Battery', desc: 'Battery replacement, alternator testing, starter motor repair, wiring diagnosis, and all electrical fault finding.' },
-    { icon: '🏍️', title: 'Two-Wheelers', short: 'Bikes & Scooters', desc: 'Engine tune-up, chain and sprocket service, brake pads, tyre change — everything your bike or scooter needs.' },
-    { icon: '🔩', title: 'Suspension', short: 'Brakes & Shocks', desc: 'Shock absorber replacement, brake pad and disc service, drum brake overhauling for safe, comfortable driving.' },
+    { icon: '⚙️', title: 'Full Service', desc: 'Complete engine oil, filters, spark plugs, coolant top-up and full vehicle inspection.' },
+    { icon: '❄️', title: 'AC & Electrical', desc: 'Gas refilling, compressor diagnostics, wiring repairs, battery and alternator service.' },
+    { icon: '🛞', title: 'Tyres & Wheels', desc: 'Puncture repair, new tyre fitting, wheel balancing and four-wheel alignment.' },
+    { icon: '🔩', title: 'Suspension & Brakes', desc: 'Shock absorbers, brake pads, disc and drum service for safe, comfortable driving.' },
+    { icon: '🏍️', title: 'Two-Wheeler Service', desc: 'Engine tune-up, chain service, brake pads — everything your bike or scooter needs.' },
+    { icon: '🔬', title: 'Diagnostics', desc: 'Computer diagnostics, engine fault reading, and full pre-purchase inspection reports.' },
+  ]
+
+  const brands = [
+    'Maruti', 'Hyundai', 'Tata', 'Honda', 'Toyota', 'Kia',
+    'Mahindra', 'Ford', 'Volkswagen', 'Skoda', 'MG', 'Renault',
+  ]
+
+  const faqs = [
+    { q: 'Where are you located?', a: 'We are located in Kottayam, Kerala. Contact us on WhatsApp or call for the exact address and directions.' },
+    { q: 'What are your working hours?', a: 'We are open Monday to Friday from 8 AM to 7 PM, and Saturday from 8 AM to 5 PM. We are closed on Sundays.' },
+    { q: 'Do you use genuine parts?', a: 'Yes, we use only manufacturer-recommended genuine parts for all repairs and services. Your vehicle warranty stays intact.' },
+    { q: 'How long does a full service take?', a: 'A standard full service typically takes 2–4 hours depending on the vehicle and any additional work required.' },
+    { q: 'Do you service two-wheelers?', a: 'Yes! We service all types of bikes and scooters — Hero, Honda, TVS, Bajaj, Royal Enfield, and more.' },
+    { q: 'Can I get a bill via WhatsApp?', a: 'Absolutely. We send itemised bills and job status updates directly to your WhatsApp throughout the service.' },
   ]
 
   const stats = [
@@ -40,358 +113,412 @@ export default function LandingPage({ onEnter }) {
     { value: '100%', label: 'Genuine Parts' },
   ]
 
-  const whys = [
-    { icon: '📸', title: 'Photo Documentation on Arrival', desc: 'Every vehicle photographed at check-in. Every scratch documented. Zero disputes.' },
-    { icon: <WhatsAppIcon />, title: 'WhatsApp Updates', desc: "Status updates sent to your phone as work progresses. No need to call and ask." },
-    { icon: '🧾', title: 'Clear Billing', desc: 'Every part and labour charge itemised. No hidden costs. No surprises at pickup.' },
-    { icon: '👨‍🔧', title: 'Expert Mechanics', desc: 'Trained technicians with experience across all major Indian and international brands.' },
-  ]
-
   return (
-    <div style={{ background: '#0A0A0A', color: '#fff', fontFamily: "'Barlow', 'Segoe UI', sans-serif", overflowX: 'hidden', minHeight: '100vh' }}>
-
+    <div style={{ background: '#0A0A0A', color: '#fff', fontFamily: "'Barlow', 'Segoe UI', sans-serif", overflowX: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;0,900;1,800&display=swap');
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
 
-        .nav-link {
-          color: rgba(255,255,255,0.6);
-          text-decoration: none;
-          font-size: 14px;
-          font-weight: 600;
-          letter-spacing: 0.02em;
-          transition: color 0.2s;
-        }
+        @keyframes gearSpin { to { transform: rotate(360deg); } }
+        @keyframes float { 0%,100% { transform: translateY(0px) rotateX(15deg) rotateY(-15deg); } 50% { transform: translateY(-20px) rotateX(15deg) rotateY(-15deg); } }
+        @keyframes floatDelay { 0%,100% { transform: translateY(0px) rotateX(-10deg) rotateY(20deg); } 50% { transform: translateY(-15px) rotateX(-10deg) rotateY(20deg); } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        @keyframes pulse3d { 0%,100% { box-shadow: 0 0 0 0 rgba(232,49,10,0.4); } 50% { box-shadow: 0 0 0 20px rgba(232,49,10,0); } }
+
+        .fade-up { animation: fadeUp 0.7s ease forwards; opacity: 0; }
+        .d1 { animation-delay: 0.1s; } .d2 { animation-delay: 0.25s; }
+        .d3 { animation-delay: 0.4s; } .d4 { animation-delay: 0.55s; }
+
+        .nav-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; transition: color 0.2s; }
         .nav-link:hover { color: #fff; }
 
-        .btn-primary {
-          display: inline-flex; align-items: center; gap: 8px;
-          background: #E8310A; color: #fff;
-          border: none; border-radius: 4px;
-          padding: 14px 28px;
-          font-family: inherit; font-size: 14px; font-weight: 700;
-          letter-spacing: 0.05em; text-transform: uppercase;
-          cursor: pointer; text-decoration: none;
-          transition: background 0.2s, transform 0.15s;
+        .btn-red { display:inline-flex; align-items:center; gap:8px; background:#E8310A; color:#fff; border:none; border-radius:4px; padding:14px 28px; font-family:inherit; font-size:14px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; text-decoration:none; transition:all 0.2s; position:relative; overflow:hidden; }
+        .btn-red::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transform:translateX(-100%); transition:transform 0.4s; }
+        .btn-red:hover::after { transform:translateX(100%); }
+        .btn-red:hover { background:#FF3D0D; transform:translateY(-2px); box-shadow:0 8px 24px rgba(232,49,10,0.4); }
+
+        .btn-ghost { display:inline-flex; align-items:center; gap:8px; background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,0.2); border-radius:4px; padding:13px 28px; font-family:inherit; font-size:14px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; text-decoration:none; transition:all 0.2s; }
+        .btn-ghost:hover { border-color:#fff; background:rgba(255,255,255,0.05); }
+
+        .svc-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:28px 24px; cursor:pointer; transition:all 0.25s; transform-style:preserve-3d; }
+        .svc-card:hover { border-color:rgba(232,49,10,0.5); background:rgba(232,49,10,0.05); transform:perspective(600px) translateZ(12px) translateY(-4px); box-shadow:0 20px 40px rgba(232,49,10,0.15); }
+
+        .brand-pill { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:12px 20px; font-size:13px; font-weight:700; color:rgba(255,255,255,0.5); letter-spacing:0.05em; text-transform:uppercase; transition:all 0.2s; text-align:center; }
+        .brand-pill:hover { background:rgba(232,49,10,0.1); border-color:rgba(232,49,10,0.3); color:#fff; }
+
+        .stat-block { text-align:center; padding:28px 16px; }
+
+        .process-step { display:flex; gap:20px; align-items:flex-start; padding:24px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px; transition:all 0.2s; }
+        .process-step:hover { border-color:rgba(232,49,10,0.3); background:rgba(232,49,10,0.03); }
+
+        .contact-input { width:100%; height:48px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.1); border-radius:6px; color:#fff; font-family:inherit; font-size:14px; padding:0 16px; outline:none; transition:border-color 0.2s; }
+        .contact-input:focus { border-color:#E8310A; }
+        .contact-input::placeholder { color:rgba(255,255,255,0.25); }
+        textarea.contact-input { height:120px; padding:14px 16px; resize:none; }
+
+        @media (max-width:768px) {
+          .desktop-nav { display:none !important; }
+          .mobile-btn { display:flex !important; }
+          .hero-actions { flex-direction:column; }
+          .hero-actions a, .hero-actions button { justify-content:center; }
+          .services-grid { grid-template-columns:1fr !important; }
+          .brands-grid { grid-template-columns:repeat(3,1fr) !important; }
+          .stats-grid { grid-template-columns:repeat(2,1fr) !important; }
+          .process-grid { grid-template-columns:1fr !important; }
+          .contact-grid { grid-template-columns:1fr !important; }
+          .footer-inner { flex-direction:column !important; align-items:center !important; text-align:center; gap:24px !important; }
+          .section-head { flex-direction:column !important; align-items:flex-start !important; }
+          .gear-bg { display:none; }
         }
-        .btn-primary:hover { background: #FF3D0D; transform: translateY(-1px); }
-
-        .btn-outline {
-          display: inline-flex; align-items: center; gap: 8px;
-          background: transparent; color: #fff;
-          border: 1.5px solid rgba(255,255,255,0.25); border-radius: 4px;
-          padding: 13px 28px;
-          font-family: inherit; font-size: 14px; font-weight: 700;
-          letter-spacing: 0.05em; text-transform: uppercase;
-          cursor: pointer; text-decoration: none;
-          transition: border-color 0.2s, background 0.2s;
-        }
-        .btn-outline:hover { border-color: #fff; background: rgba(255,255,255,0.05); }
-
-        .service-tab {
-          padding: 14px 20px;
-          border: none; border-left: 3px solid transparent;
-          background: transparent; color: rgba(255,255,255,0.45);
-          font-family: inherit; font-size: 14px; font-weight: 600;
-          text-align: left; cursor: pointer; width: 100%;
-          transition: all 0.2s;
-          letter-spacing: 0.02em;
-        }
-        .service-tab:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.03); }
-        .service-tab.active { color: #fff; border-left-color: #E8310A; background: rgba(232,49,10,0.08); }
-
-        .why-card {
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 8px; padding: 28px 24px;
-          transition: border-color 0.2s, background 0.2s;
-        }
-        .why-card:hover { border-color: rgba(232,49,10,0.4); background: rgba(232,49,10,0.04); }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
-        .stat-block { text-align: center; padding: 28px 16px; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .fade-up { animation: fadeUp 0.7s ease forwards; }
-        .fade-up-1 { animation-delay: 0.1s; opacity: 0; }
-        .fade-up-2 { animation-delay: 0.25s; opacity: 0; }
-        .fade-up-3 { animation-delay: 0.4s; opacity: 0; }
-        .fade-up-4 { animation-delay: 0.55s; opacity: 0; }
-
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .mobile-menu-btn { display: flex !important; }
-          .hero-btns { flex-direction: column; align-items: stretch; }
-          .hero-btns a, .hero-btns button { justify-content: center; }
-          .services-layout { flex-direction: column !important; }
-          .services-tabs { flex-direction: row !important; overflow-x: auto; border-left: none !important; border-right: none !important; border-bottom: 2px solid rgba(255,255,255,0.06) !important; }
-          .service-tab { border-left: none !important; border-bottom: 3px solid transparent; white-space: nowrap; }
-          .service-tab.active { border-bottom-color: #E8310A !important; border-left-color: transparent !important; }
-          .why-grid { grid-template-columns: 1fr !important; }
-          .footer-grid { flex-direction: column !important; gap: 32px !important; align-items: center !important; text-align: center; }
-          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .stat-dividers > div { border-right: 1px solid rgba(255,255,255,0.2) !important; border-bottom: 1px solid rgba(255,255,255,0.2) !important; }
-          .stat-dividers > div:nth-child(2n) { border-right: none !important; }
-          .stat-dividers > div:nth-child(n+3) { border-bottom: none !important; }
-          .section-header { align-items: flex-start !important; flex-direction: column !important; gap: 12px !important; }
-        }
-
-        @media (min-width: 769px) {
-          .mobile-menu-btn { display: none !important; }
-          .mobile-menu { display: none !important; }
+        @media (min-width:769px) {
+          .mobile-btn { display:none !important; }
+          .mobile-menu { display:none !important; }
         }
       `}</style>
 
       {/* ── NAV ── */}
-      <nav style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 200, padding: '0 5%', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: scrolled ? 'rgba(10,10,10,0.97)' : 'transparent', backdropFilter: scrolled ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : 'none', transition: 'all 0.3s' }}>
-
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src={jwLogo} alt="JW Tuned Logo" style={{ width: 40, height: 40, objectFit: 'contain' }} />
+      <nav style={{ position:'sticky', top:0, zIndex:200, padding:'0 5%', height:68, display:'flex', alignItems:'center', justifyContent:'space-between', background: scrolled ? 'rgba(10,10,10,0.97)' : 'transparent', backdropFilter: scrolled ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : 'none', transition:'all 0.3s' }}>
+        <div style={{ display:'flex', alignItems:'center' }}>
+          <img src={jwLogo} alt="JW Tuned" style={{ height:38, objectFit:'contain' }} />
         </div>
-
-        {/* Desktop nav */}
-        <div className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          <a href="#services" className="nav-link">Services</a>
-          <a href="#why" className="nav-link">Why Us</a>
-          <a href="#contact" className="nav-link">Contact</a>
-          <a href="https://www.instagram.com/jw_tuned?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" className="nav-link">Instagram</a>
-          <a href="tel:+91XXXXXXXXXX" className="btn-primary" style={{ padding: '10px 20px', fontSize: 13 }}>📞 Book Service</a>
-          <button onClick={onEnter} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Staff →</button>
+        <div className="desktop-nav" style={{ display:'flex', alignItems:'center', gap:28 }}>
+          {['#services','#process','#about','#faq','#contact'].map((href,i) => (
+            <a key={href} href={href} className="nav-link">{['Services','Process','About','FAQ','Contact'][i]}</a>
+          ))}
+          <a href="https://www.instagram.com/jw_tuned" target="_blank" rel="noreferrer" className="nav-link"><InstagramIcon /></a>
+          <a href="tel:+919447403837" className="btn-red" style={{ padding:'9px 18px', fontSize:13 }}>📞 Book Now</a>
+          <button onClick={onEnter} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.25)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Staff →</button>
         </div>
-
-        {/* Mobile menu button */}
-        <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+        <button className="mobile-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ background:'none', border:'none', color:'#fff', fontSize:22, cursor:'pointer', display:'flex', alignItems:'center' }}>
           {menuOpen ? '✕' : '☰'}
         </button>
       </nav>
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="mobile-menu" style={{ position: 'fixed', top: 68, left: 0, right: 0, bottom: 0, background: '#0A0A0A', zIndex: 199, padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {['#services', '#why', '#contact'].map((href, i) => (
-            <a key={href} href={href} onClick={() => setMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none', fontSize: 28, fontWeight: 800, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', letterSpacing: '-0.5px' }}>
-              {['Services', 'Why Us', 'Contact'][i]}
+        <div className="mobile-menu" style={{ position:'fixed', top:68, inset:'68px 0 0', background:'#0A0A0A', zIndex:199, padding:'32px 24px', display:'flex', flexDirection:'column', gap:4, overflowY:'auto' }}>
+          {['#services','#process','#about','#faq','#contact'].map((href,i) => (
+            <a key={href} href={href} onClick={() => setMenuOpen(false)} style={{ color:'#fff', textDecoration:'none', fontSize:26, fontWeight:800, padding:'12px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', letterSpacing:'-0.3px' }}>
+              {['Services','Process','About','FAQ','Contact'][i]}
             </a>
           ))}
-          <a href="https://www.instagram.com/jw_tuned?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none', fontSize: 28, fontWeight: 800, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', letterSpacing: '-0.5px' }}>
-            Instagram
-          </a>
-          <a href="tel:+91XXXXXXXXXX" className="btn-primary" style={{ marginTop: 24, justifyContent: 'center' }}>📞 Book a Service</a>
-          <button onClick={() => { setMenuOpen(false); onEnter() }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginTop: 8 }}>Staff Portal →</button>
+          <div style={{ display:'flex', gap:12, marginTop:24, flexDirection:'column' }}>
+            <a href="tel:+919447403837" className="btn-red" style={{ justifyContent:'center' }}>📞 Book a Service</a>
+            <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" className="btn-ghost" style={{ justifyContent:'center' }}><WhatsAppIcon /> WhatsApp</a>
+            <button onClick={() => { setMenuOpen(false); onEnter() }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.25)', fontSize:13, cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>Staff Portal →</button>
+          </div>
         </div>
       )}
 
       {/* ── HERO ── */}
-      <div style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '120px 5% 80px', overflow: 'hidden' }}>
+      <div style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', padding:'100px 5% 80px', overflow:'hidden' }}>
 
-        {/* Background elements */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0A0A0A 0%, #111827 50%, #0A0A0A 100%)' }} />
-        <div style={{ position: 'absolute', top: '15%', right: '-5%', width: '55%', height: '70%', background: 'radial-gradient(ellipse, rgba(232,49,10,0.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '10%', left: '5%', width: 300, height: 300, background: 'radial-gradient(circle, rgba(24,95,165,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        {/* Layered background */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg, #0A0A0A 0%, #0F0F0F 40%, #110808 100%)' }} />
+        <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(rgba(232,49,10,0.06) 1px, transparent 1px)', backgroundSize:'40px 40px' }} />
+        <div style={{ position:'absolute', top:'10%', right:'-10%', width:'60%', height:'80%', background:'radial-gradient(ellipse, rgba(232,49,10,0.15) 0%, transparent 65%)', pointerEvents:'none' }} />
 
-        {/* Diagonal accent line */}
-        <div style={{ position: 'absolute', top: 0, right: '30%', width: 1, height: '100%', background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.04), transparent)', transform: 'skewX(-15deg)' }} />
+        {/* Floating 3D gears */}
+        <div className="gear-bg">
+          <FloatingGear size={180} x="62%" y="8%" duration={25} opacity={0.6} />
+          <FloatingGear size={100} x="78%" y="55%" duration={18} opacity={0.4} blur={1} />
+          <FloatingGear size={60}  x="55%" y="70%" duration={12} opacity={0.3} blur={2} />
+        </div>
 
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1200, width: '100%', margin: '0 auto' }}>
-          <div style={{ maxWidth: 680 }}>
+        {/* 3D floating cube accent */}
+        <div className="gear-bg" style={{ position:'absolute', right:'8%', top:'20%', width:160, height:160, transformStyle:'preserve-3d', animation:'float 6s ease-in-out infinite' }}>
+          <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg, rgba(232,49,10,0.15), rgba(232,49,10,0.03))', border:'1px solid rgba(232,49,10,0.2)', borderRadius:16, backdropFilter:'blur(4px)', transform:'perspective(400px) rotateX(15deg) rotateY(-15deg)', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 60px rgba(232,49,10,0.1)' }}>
+            <div style={{ position:'absolute', inset:1, background:'linear-gradient(135deg, rgba(255,255,255,0.05), transparent)', borderRadius:15 }} />
+            <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', fontSize:48 }}>🔧</div>
+          </div>
+        </div>
 
-            <div className="fade-up fade-up-1" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,49,10,0.12)', border: '1px solid rgba(232,49,10,0.3)', borderRadius: 3, padding: '6px 14px', fontSize: 11, fontWeight: 700, color: '#E8310A', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 28 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#E8310A', display: 'inline-block' }} />
+        <div style={{ position:'absolute', right:'18%', bottom:'15%', width:100, height:100, transformStyle:'preserve-3d', animation:'floatDelay 8s ease-in-out infinite' }} className="gear-bg">
+          <div style={{ width:'100%', height:'100%', background:'rgba(232,49,10,0.08)', border:'1px solid rgba(232,49,10,0.15)', borderRadius:12, transform:'perspective(300px) rotateX(-10deg) rotateY(20deg)' }}>
+            <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', fontSize:30 }}>⚡</div>
+          </div>
+        </div>
+
+        <div style={{ position:'relative', zIndex:1, width:'100%', margin:'0 auto' }}>
+          <div style={{ maxWidth:660 }}>
+            <div className="fade-up d1" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(232,49,10,0.1)', border:'1px solid rgba(232,49,10,0.25)', borderRadius:3, padding:'6px 14px', fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:24 }}>
+              <span style={{ width:6, height:6, borderRadius:'50%', background:'#E8310A', display:'inline-block', animation:'pulse3d 2s ease infinite' }} />
               Kottayam's Trusted Auto Workshop
             </div>
 
-            <h1 className="fade-up fade-up-2" style={{ fontSize: 'clamp(44px, 8vw, 80px)', fontWeight: 900, lineHeight: 1.0, letterSpacing: '-2px', marginBottom: 24 }}>
-              PRECISION<br />
-              <em style={{ fontStyle: 'italic', color: '#E8310A' }}>AUTO CARE</em><br />
-              FOR EVERY VEHICLE.
+            <h1 className="fade-up d2" style={{ fontSize:'clamp(46px,8.5vw,84px)', fontWeight:900, lineHeight:1.0, letterSpacing:'-2px', marginBottom:22 }}>
+              EXPERT<br />
+              <em style={{ fontStyle:'italic', color:'#E8310A' }}>CAR & BIKE</em><br />
+              SERVICE.
             </h1>
 
-            <p className="fade-up fade-up-3" style={{ fontSize: 'clamp(15px, 2vw, 18px)', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, maxWidth: 480, marginBottom: 40 }}>
-              Expert servicing for cars and bikes in Kottayam. Genuine parts, transparent pricing, and WhatsApp updates at every step.
+            <p className="fade-up d3" style={{ fontSize:'clamp(15px,1.8vw,18px)', color:'rgba(255,255,255,0.5)', lineHeight:1.75, maxWidth:460, marginBottom:36 }}>
+              Professional servicing for all cars and two-wheelers in Kottayam. Genuine parts, transparent pricing, WhatsApp updates at every step.
             </p>
 
-            <div className="fade-up fade-up-4 hero-btns" style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-              <a href="tel:+91XXXXXXXXXX" className="btn-primary" style={{ fontSize: 15, padding: '16px 32px' }}>
+            <div className="fade-up d4 hero-actions" style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+              <a href="tel:+919447403837" className="btn-red" style={{ fontSize:15, padding:'16px 32px', animation:'pulse3d 3s ease infinite' }}>
                 📞 Book a Service
               </a>
-              <a href="https://wa.me/91XXXXXXXXXX" target="_blank" rel="noreferrer" className="btn-outline" style={{ fontSize: 15, padding: '15px 32px' }}>
+              <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" className="btn-ghost" style={{ fontSize:15, padding:'15px 32px' }}>
                 <WhatsAppIcon /> WhatsApp Us
               </a>
-              <a href="https://www.instagram.com/jw_tuned?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" className="btn-outline" style={{ fontSize: 15, padding: '15px 32px' }}>
-                <InstagramIcon /> Instagram
+              <a href="https://www.instagram.com/jw_tuned" target="_blank" rel="noreferrer" className="btn-ghost" style={{ fontSize:15, padding:'15px 32px' }}>
+                <InstagramIcon /> Follow Us
               </a>
             </div>
 
-            <div className="fade-up fade-up-4" style={{ marginTop: 40, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
-                <span style={{ color: '#22C55E', fontSize: 16 }}>●</span> Open Today · 9 AM – 7 PM
+            <div className="fade-up d4" style={{ marginTop:36, display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color:'rgba(255,255,255,0.35)' }}>
+                <span style={{ color:'#22C55E' }}>●</span> Open Today · 9 AM – 7 PM
               </div>
-              <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)' }} />
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>📍 Kottayam, Kerala</div>
+              <div style={{ width:1, height:14, background:'rgba(255,255,255,0.12)' }} />
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.35)' }}>📍 Kottayam, Kerala</div>
+              <div style={{ width:1, height:14, background:'rgba(255,255,255,0.12)' }} />
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.35)' }}>+91 9447403837</div>
             </div>
           </div>
         </div>
 
-        {/* Large background text */}
-        <div style={{ position: 'absolute', bottom: '-2%', right: '-2%', fontSize: 'clamp(80px, 15vw, 180px)', fontWeight: 900, color: 'rgba(255,255,255,0.02)', letterSpacing: '-8px', userSelect: 'none', pointerEvents: 'none', lineHeight: 1 }}>
-          TUNED
-        </div>
+        {/* Watermark */}
+        <div style={{ position:'absolute', bottom:'-3%', right:'-1%', fontSize:'clamp(70px,14vw,170px)', fontWeight:900, color:'rgba(255,255,255,0.015)', letterSpacing:'-6px', userSelect:'none', pointerEvents:'none', lineHeight:1 }}>TUNED</div>
       </div>
 
       {/* ── STATS BAR ── */}
-      <div style={{ background: '#E8310A' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }} className="stats-grid stat-dividers">
+      <div style={{ background:'#E8310A', borderTop:'1px solid rgba(255,255,255,0.1)', padding:'0 5%' }}>
+        <div style={{ margin:'0 auto', width:'100%', display:'grid' }} className="stats-grid" data-cols="4">
           {stats.map((s, i) => (
             <div key={s.label} className="stat-block" style={{ borderRight: i < 3 ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
-              <div style={{ fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 900, letterSpacing: '-1px', lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 5, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{s.label}</div>
+              <div style={{ fontSize:'clamp(28px,4vw,42px)', fontWeight:900, letterSpacing:'-1px', lineHeight:1 }}>{s.value}</div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.7)', marginTop:5, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase' }}>{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── SERVICES ── */}
-      <div id="services" style={{ padding: 'clamp(60px, 8vw, 100px) 5%', maxWidth: 1200, margin: '0 auto' }}>
+      <div id="services" style={{ padding:'clamp(60px,8vw,100px) 5%' }}>
+        <div style={{ margin:'0 auto', width:'100%' }}>
+          <div style={{ marginBottom:52 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:12 }}>// Services</div>
+            <div className="section-head" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', gap:20 }}>
+              <h2 style={{ fontSize:'clamp(30px,5vw,52px)', fontWeight:900, letterSpacing:'-1.5px', lineHeight:1.05 }}>
+                OUR<br />SERVICES
+              </h2>
+              <p style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:320, lineHeight:1.7 }}>
+                From quick fixes to full overhauls — we handle everything your vehicle needs.
+              </p>
+            </div>
+          </div>
 
-        <div style={{ marginBottom: 56 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#E8310A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 14 }}>What We Do</div>
-          <h2 style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 900, letterSpacing: '-1.5px', lineHeight: 1.05 }}>
-            COMPLETE AUTO<br />SERVICE & REPAIR
-          </h2>
-        </div>
-
-        <div className="services-layout" style={{ display: 'flex', gap: 0, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, overflow: 'hidden' }}>
-
-          {/* Tabs */}
-          <div className="services-tabs" style={{ display: 'flex', flexDirection: 'column', borderLeft: 'none', borderRight: '1px solid rgba(255,255,255,0.07)', minWidth: 220, background: 'rgba(255,255,255,0.01)' }}>
+          <div className="services-grid" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
             {services.map((s, i) => (
-              <button key={s.title} className={`service-tab${activeService === i ? ' active' : ''}`} onClick={() => setActiveService(i)}>
-                <span style={{ marginRight: 10 }}>{s.icon}</span>{s.title}
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2, paddingLeft: 28 }}>{s.short}</div>
-              </button>
+              <TiltCard key={s.title} style={{}}>
+                <div className="svc-card" onClick={() => setActiveService(activeService === i ? null : i)}>
+                  <div style={{ fontSize:36, marginBottom:16 }}>{s.icon}</div>
+                  <h3 style={{ fontSize:17, fontWeight:800, marginBottom:10, letterSpacing:'-0.3px' }}>{s.title}</h3>
+                  <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:16 }}>{s.desc}</p>
+                  <a href="tel:+919447403837" className="btn-red" style={{ fontSize:12, padding:'9px 16px' }}>Book Now →</a>
+                </div>
+              </TiltCard>
             ))}
           </div>
 
-          {/* Content */}
-          <div style={{ flex: 1, padding: 'clamp(28px, 5%, 52px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(255,255,255,0.02)' }}>
-            <div style={{ fontSize: 52, marginBottom: 20 }}>{services[activeService].icon}</div>
-            <h3 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 900, letterSpacing: '-0.5px', marginBottom: 16 }}>
-              {services[activeService].title}
-            </h3>
-            <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, maxWidth: 440, marginBottom: 28 }}>
-              {services[activeService].desc}
-            </p>
-            <a href="tel:+91XXXXXXXXXX" className="btn-primary" style={{ alignSelf: 'flex-start' }}>
-              Book This Service →
-            </a>
+          {/* Looking for something else */}
+          <div style={{ marginTop:32, background:'rgba(232,49,10,0.05)', border:'1px solid rgba(232,49,10,0.15)', borderRadius:10, padding:'24px 28px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }}>
+            <div>
+              <div style={{ fontSize:16, fontWeight:800, marginBottom:4 }}>Looking for something else?</div>
+              <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', fontStyle:'italic' }}>We offer many additional services — just ask.</div>
+            </div>
+            <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" className="btn-red"><WhatsAppIcon /> Ask on WhatsApp</a>
           </div>
         </div>
       </div>
 
-      {/* ── WHY US ── */}
-      <div id="why" style={{ background: '#111', padding: 'clamp(60px, 8vw, 100px) 5%', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-
-          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 52, flexWrap: 'wrap', gap: 20 }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#E8310A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 14 }}>Why Choose Us</div>
-              <h2 style={{ fontSize: 'clamp(30px, 5vw, 50px)', fontWeight: 900, letterSpacing: '-1px', lineHeight: 1.05 }}>
-                WE DO IT<br />DIFFERENTLY.
-              </h2>
-            </div>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', maxWidth: 340, lineHeight: 1.7 }}>
-              Every workshop claims to be the best. Here's what actually sets JW Tuned apart.
+      {/* ── ABOUT ── */}
+      <div id="about" style={{ background:'#0F0F0F', borderTop:'1px solid rgba(255,255,255,0.05)', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'clamp(60px,8vw,100px) 5%', position:'relative', overflow:'hidden' }}>
+        <div style={{ position:'absolute', top:'-20%', left:'-10%', width:400, height:400, background:'radial-gradient(circle, rgba(232,49,10,0.06) 0%, transparent 70%)', pointerEvents:'none' }} />
+        <div style={{ margin:'0 auto', width:'100%', display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:60, alignItems:'center' }}>
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:12 }}>// About</div>
+            <h2 style={{ fontSize:'clamp(30px,5vw,48px)', fontWeight:900, letterSpacing:'-1px', lineHeight:1.05, marginBottom:24 }}>
+              ABOUT<br />JW TUNED
+            </h2>
+            <p style={{ fontSize:15, color:'rgba(255,255,255,0.5)', lineHeight:1.8, marginBottom:20 }}>
+              JW Tuned is a professional auto service workshop based in Kottayam, Kerala. We specialise in servicing both two-wheelers and four-wheelers with a focus on quality, transparency, and customer satisfaction.
             </p>
+            <p style={{ fontSize:15, color:'rgba(255,255,255,0.5)', lineHeight:1.8, marginBottom:32 }}>
+              With over 5 years of hands-on experience, our team has serviced 1000+ vehicles across all major brands. We believe in honest work, genuine parts, and keeping you informed at every step.
+            </p>
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+              <a href="tel:+919447403837" className="btn-red">📞 Call Us</a>
+              <a href="https://www.instagram.com/jw_tuned" target="_blank" rel="noreferrer" className="btn-ghost"><InstagramIcon /> Our Work</a>
+            </div>
           </div>
 
-          <div className="why-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-            {whys.map(w => (
-              <div key={w.title} className="why-card">
-                <div style={{ fontSize: 32, marginBottom: 18 }}>{w.icon}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 10 }}>{w.title}</div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7 }}>{w.desc}</div>
-              </div>
+          {/* 3D feature list */}
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {[
+              { icon:'📸', t:'Photo Documentation', d:'Every vehicle photographed on arrival. Every dent logged. Zero disputes at delivery.' },
+              { icon:'💬', t:'WhatsApp Updates', d:'Real-time status updates sent to your phone throughout the service.' },
+              { icon:'🧾', t:'Transparent Billing', d:'Itemised bills showing every part and labour charge. No hidden costs.' },
+              { icon:'🔩', t:'Genuine Parts Only', d:'We use only manufacturer-recommended parts. Your warranty stays intact.' },
+            ].map(f => (
+              <TiltCard key={f.t} style={{}}>
+                <div style={{ display:'flex', gap:16, alignItems:'flex-start', padding:'16px 18px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:10, transition:'all 0.2s' }}>
+                  <span style={{ fontSize:24, flexShrink:0 }}>{f.icon}</span>
+                  <div>
+                    <div style={{ fontSize:14, fontWeight:800, marginBottom:4 }}>{f.t}</div>
+                    <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', lineHeight:1.6 }}>{f.d}</div>
+                  </div>
+                </div>
+              </TiltCard>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── PROCESS ── */}
+      <div id="process" style={{ padding:'clamp(60px,8vw,100px) 5%' }}>
+        <div style={{ margin:'0 auto', width:'100%' }}>
+          <div style={{ marginBottom:52 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:12 }}>// How It Works</div>
+            <h2 style={{ fontSize:'clamp(30px,5vw,52px)', fontWeight:900, letterSpacing:'-1.5px', lineHeight:1.05 }}>OUR PROCESS</h2>
+          </div>
+
+          <div className="process-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+            {[
+              { step:'01', icon:'📞', t:'Book', d:'Call or WhatsApp us to schedule your service at a convenient time.' },
+              { step:'02', icon:'🔍', t:'Inspect', d:'We photograph your vehicle and do a full inspection, then share an estimate.' },
+              { step:'03', icon:'🔧', t:'Service', d:'Our mechanics carry out the agreed work using genuine parts.' },
+              { step:'04', icon:'✅', t:'Deliver', d:'Vehicle ready notification on WhatsApp. Itemised bill shared before pickup.' },
+            ].map((p, i) => (
+              <TiltCard key={p.step} style={{}}>
+                <div className="process-step" style={{ flexDirection:'column', position:'relative', overflow:'hidden' }}>
+                  <div style={{ fontSize:60, fontWeight:900, color:'rgba(232,49,10,0.08)', position:'absolute', top:-10, right:10, lineHeight:1, pointerEvents:'none' }}>{p.step}</div>
+                  <div style={{ fontSize:32, marginBottom:14, position:'relative' }}>{p.icon}</div>
+                  <div style={{ fontSize:16, fontWeight:800, marginBottom:8, position:'relative' }}>{p.t}</div>
+                  <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', lineHeight:1.65, position:'relative' }}>{p.d}</div>
+                </div>
+              </TiltCard>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── BRANDS ── */}
+      <div style={{ background:'#0F0F0F', borderTop:'1px solid rgba(255,255,255,0.05)', padding:'clamp(48px,6vw,72px) 5%' }}>
+        <div style={{ margin:'0 auto', width:'100%' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:12 }}>// Brands</div>
+          <h2 style={{ fontSize:'clamp(24px,4vw,40px)', fontWeight:900, letterSpacing:'-1px', marginBottom:32 }}>
+            BRANDS THAT<br /><em style={{ fontStyle:'italic', color:'#E8310A' }}>WE SERVICE</em>
+          </h2>
+          <div className="brands-grid" style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10 }}>
+            {brands.map(b => (
+              <div key={b} className="brand-pill">{b}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── FAQ ── */}
+      <div id="faq" style={{ padding:'clamp(60px,8vw,100px) 5%' }}>
+        <div style={{ margin:'0 auto', width:'100%' }}>
+          <div style={{ marginBottom:52 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:12 }}>// FAQ</div>
+            <h2 style={{ fontSize:'clamp(28px,5vw,52px)', fontWeight:900, letterSpacing:'-1.5px', lineHeight:1.05 }}>
+              FREQUENTLY ASKED<br /><em style={{ fontStyle:'italic', color:'#E8310A' }}>QUESTIONS</em>
+            </h2>
+          </div>
+          <div style={{ maxWidth:780 }}>
+            {faqs.map(f => <FAQItem key={f.q} q={f.q} a={f.a} />)}
           </div>
         </div>
       </div>
 
       {/* ── CONTACT ── */}
-      <div id="contact" style={{ padding: 'clamp(60px, 8vw, 100px) 5%' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#E8310A', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 14 }}>Get In Touch</div>
-          <h2 style={{ fontSize: 'clamp(30px, 5vw, 52px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 52 }}>
-            VISIT US OR<br />CALL AHEAD.
+      <div id="contact" style={{ background:'#0F0F0F', borderTop:'1px solid rgba(255,255,255,0.05)', padding:'clamp(60px,8vw,100px) 5%', position:'relative', overflow:'hidden' }}>
+        <div style={{ position:'absolute', bottom:'-20%', right:'-10%', width:500, height:500, background:'radial-gradient(circle, rgba(232,49,10,0.05) 0%, transparent 70%)', pointerEvents:'none' }} />
+        <div style={{ margin:'0 auto', width:'100%' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:12 }}>// Contact</div>
+          <h2 style={{ fontSize:'clamp(28px,5vw,52px)', fontWeight:900, letterSpacing:'-1.5px', lineHeight:1.05, marginBottom:52 }}>
+            GET IN TOUCH<br /><em style={{ fontStyle:'italic', color:'#E8310A' }}>WITH US</em>
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+          <div className="contact-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:40, alignItems:'start' }}>
 
-            <div style={{ background: '#E8310A', borderRadius: 8, padding: 32 }}>
-              <div style={{ fontSize: 28, marginBottom: 16 }}><WhatsAppIcon /></div>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8, color: 'rgba(255,255,255,0.7)' }}>Call / WhatsApp</div>
-              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px', marginBottom: 20 }}>+91 9447403837</div>
-              <a href="tel:+91XXXXXXXXXX" className="btn-outline" style={{ fontSize: 13, padding: '10px 20px' }}>Call Now</a>
-            </div>
-
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, padding: 32 }}>
-              <div style={{ fontSize: 28, marginBottom: 16 }}>📍</div>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8, color: 'rgba(255,255,255,0.4)' }}>Location</div>
-              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Kottayam, Kerala</div>
-              <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, marginBottom: 20 }}>Your Street Address<br />Kerala — 686001</div>
-              <a href="https://maps.google.com" target="_blank" rel="noreferrer" className="btn-outline" style={{ fontSize: 13, padding: '10px 20px' }}>Open Maps</a>
-            </div>
-
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, padding: 32 }}>
-              <div style={{ fontSize: 28, marginBottom: 16 }}>🕐</div>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16, color: 'rgba(255,255,255,0.4)' }}>Working Hours</div>
+            {/* Info */}
+            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
               {[
-                { day: 'Mon – Fri', time: '8:00 AM – 7:00 PM', open: true },
-                { day: 'Saturday',  time: '8:00 AM – 5:00 PM', open: true },
-                { day: 'Sunday',    time: 'Closed',             open: false },
-              ].map(h => (
-                <div key={h.day} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>{h.day}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: h.open ? '#22C55E' : '#EF4444' }}>{h.time}</span>
-                </div>
+                { icon:'📞', label:'Phone / WhatsApp', val:'+91 9447403837', href:'tel:+919447403837' },
+                { icon:'📍', label:'Location', val:'Kottayam, Kerala', href:'https://maps.google.com' },
+                { icon:<InstagramIcon />, label:'Instagram', val:'@jw_tuned', href:'https://www.instagram.com/jw_tuned' },
+              ].map(c => (
+                <a key={c.label} href={c.href} target={c.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer" style={{ textDecoration:'none', display:'flex', gap:16, alignItems:'center', padding:'20px 22px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, transition:'all 0.2s', color:'#fff' }}>
+                  <div style={{ width:44, height:44, background:'rgba(232,49,10,0.1)', border:'1px solid rgba(232,49,10,0.2)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>{c.icon}</div>
+                  <div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:3 }}>{c.label}</div>
+                    <div style={{ fontSize:16, fontWeight:800 }}>{c.val}</div>
+                  </div>
+                </a>
               ))}
+
+              {/* Hours */}
+              <div style={{ padding:'20px 22px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10 }}>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:14 }}>🕐 Working Hours</div>
+                {[
+                  { d:'Mon – Fri', t:'8:00 AM – 7:00 PM', o:true },
+                  { d:'Saturday',  t:'8:00 AM – 5:00 PM', o:true },
+                  { d:'Sunday',    t:'Closed',             o:false },
+                ].map(h => (
+                  <div key={h.d} style={{ display:'flex', justifyContent:'space-between', marginBottom:10, fontSize:14 }}>
+                    <span style={{ color:'rgba(255,255,255,0.55)' }}>{h.d}</span>
+                    <span style={{ fontWeight:700, color: h.o ? '#22C55E' : '#EF4444' }}>{h.t}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, padding: 32 }}>
-              <div style={{ fontSize: 28, marginBottom: 16 }}><InstagramIcon /></div>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8, color: 'rgba(255,255,255,0.4)' }}>Social Media</div>
-              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Instagram</div>
-              <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, marginBottom: 20 }}>Follow us for daily<br />updates and projects.</div>
-              <a href="https://www.instagram.com/jw_tuned?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" className="btn-outline" style={{ fontSize: 13, padding: '10px 20px' }}>Follow @jw_tuned</a>
+            {/* Form */}
+            <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:12, padding:32 }}>
+              <div style={{ fontSize:16, fontWeight:800, marginBottom:6 }}>Send us a message</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:24 }}>We'll get back to you on WhatsApp.</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <input className="contact-input" placeholder="Your Name" value={formData.name} onChange={e => setFormData(p => ({...p, name:e.target.value}))} />
+                <input className="contact-input" placeholder="Phone Number" value={formData.phone} onChange={e => setFormData(p => ({...p, phone:e.target.value}))} inputMode="tel" />
+                <textarea className="contact-input" placeholder="Describe your issue or service needed..." value={formData.message} onChange={e => setFormData(p => ({...p, message:e.target.value}))} />
+                
+                <a href={`https://wa.me/919447403837?text=${encodeURIComponent(`Hi JW Tuned! My name is ${formData.name}. ${formData.message}`)}`}
+                  target="_blank" rel="noreferrer"
+                  className="btn-red"
+                  style={{ justifyContent:'center', marginTop:4 }}
+                >
+                  <WhatsAppIcon /> Send via WhatsApp
+                </a>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* ── FOOTER ── */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '32px 5%' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }} className="footer-grid">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
-            <img src={jwLogo} alt="JW Tuned Logo" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+      <div style={{ borderTop:'1px solid rgba(255,255,255,0.07)', padding:'28px 5%' }}>
+        <div style={{ margin:'0 auto', width:'100%', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }} className="footer-inner">
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <img src={jwLogo} alt="JW Tuned" style={{ height:30, objectFit:'contain' }} />
             <div>
-              <div style={{ fontWeight: 900, fontSize: 15, letterSpacing: '-0.3px' }}>JW TUNED</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em' }}>KOTTAYAM · KERALA</div>
+              <div style={{ fontWeight:900, fontSize:14, letterSpacing:'-0.3px' }}>JW TUNED</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.25)', letterSpacing:'0.1em' }}>KOTTAYAM · KERALA</div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
-              © {new Date().getFullYear()} JW Tuned. All rights reserved.
-            </div>
-            <a href="https://www.instagram.com/jw_tuned?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: 13 }}>Instagram</a>
+          <div style={{ display:'flex', gap:20, alignItems:'center', flexWrap:'wrap', justifyContent:'center' }}>
+            <span style={{ fontSize:12, color:'rgba(255,255,255,0.25)' }}>© {new Date().getFullYear()} JW Tuned</span>
+            <a href="https://www.instagram.com/jw_tuned" target="_blank" rel="noreferrer" style={{ color:'rgba(255,255,255,0.35)', fontSize:13, textDecoration:'none' }}><InstagramIcon /></a>
+            <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" style={{ color:'rgba(255,255,255,0.35)', fontSize:13, textDecoration:'none' }}><WhatsAppIcon /></a>
           </div>
-          <button onClick={onEnter} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.05em' }}>
+          <button onClick={onEnter} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.18)', fontSize:12, cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.05em' }}>
             Staff Portal →
           </button>
         </div>

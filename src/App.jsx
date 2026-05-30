@@ -5,6 +5,7 @@ import { printBill } from './PrintBill'
 import LoadingScreen from './LoadingScreen'
 import LandingPage from './LandingPage'
 import jwLogo from './assets/jwlogo.svg'
+import LoginScreen from './LoginScreen'
 
 const STATUS = {
   'Waiting':     { bg: '#FEF3E2', color: '#B45309', dot: '#F59E0B' },
@@ -67,38 +68,80 @@ function fromDb(row) {
 
 // ── APP ──────────────────────────────────────────────────────
 export default function App() {
-  const [appState, setAppState]       = useState('loading') // 'loading' | 'landing' | 'app'
-  const [screen, setScreen]           = useState('list')
-  const [jobs, setJobs]               = useState([])
-  const [editingJob, setEditingJob]   = useState(null)
-  const [billingJob, setBillingJob]   = useState(null)
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState(null)
+  const [appState, setAppState]         = useState('landing')
+  const [loginError, setLoginError]     = useState('')
+  const [screen, setScreen]             = useState('list')
+  const [jobs, setJobs]                 = useState([])
+  const [editingJob, setEditingJob]     = useState(null)
+  const [billingJob, setBillingJob]     = useState(null)
+  const [loading, setLoading]           = useState(true)
+  const [error, setError]               = useState(null)
 
   useEffect(() => {
-  async function load() {
-    setLoading(true); setError(null)
-    const { data, error } = await supabase
-      .from('jobs').select('*').order('created_at', { ascending: false })
-    if (error) { setError('Could not load jobs.'); console.error(error) }
-    else {
-      const rows = data.map(fromDb)
-      setJobs(rows)
-      const nums = data
-        .map(r => parseInt(r.id.split('-')[2]))
-        .filter(n => !isNaN(n))
-      counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
+    if (appState === 'app') {
+      async function load() {
+        setLoading(true); setError(null)
+        const { data, error } = await supabase
+          .from('jobs').select('*').order('created_at', { ascending: false })
+        if (error) { setError('Could not load jobs.'); console.error(error) }
+        else {
+          setJobs(data.map(fromDb))
+          const nums = data.map(r => parseInt(r.id.split('-')[2])).filter(n => !isNaN(n))
+          counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
+        }
+        setLoading(false)
+      }
+      load()
     }
-    setLoading(false)
+  }, [appState])
+
+  // ── ALL FUNCTIONS DEFINED HERE FIRST ──
+  function handleLogin(password) {
+    if (password === 'jwtuned2024') {
+      setLoginError('')
+      setAppState('loading')
+    } else {
+      setLoginError('Wrong password. Try again.')
+    }
   }
-  load()
-}, [])
 
-  // show loading first, then landing
-  if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('landing')} />
-  if (appState === 'landing') return <LandingPage onEnter={() => setAppState('app')} />
+  function openNew()     { setEditingJob(null); setScreen('form') }
+  function openEdit(job) { setEditingJob(job);  setScreen('form') }
+  function openBill(job) { setBillingJob(job);  setScreen('bill') }
 
-  // rest of your existing return logic below stays exactly the same...
+  async function saveJob(form, vehicleType) {
+    const id  = editingJob ? editingJob.id : generateId()
+    const row = toDb(form, vehicleType, id)
+    if (editingJob) {
+      const { error } = await supabase.from('jobs').update(row).eq('id', id)
+      if (error) { alert('Error: ' + error.message); return }
+      setJobs(p => p.map(j => j.id === id ? fromDb(row) : j))
+    } else {
+      const { error } = await supabase.from('jobs').insert(row)
+      if (error) { alert('Error: ' + error.message); return }
+      setJobs(p => [fromDb(row), ...p])
+    }
+    setScreen('list')
+  }
+
+  async function deleteJob(id) {
+    if (!window.confirm('Delete this job card?')) return
+    const { error } = await supabase.from('jobs').delete().eq('id', id)
+    if (error) { alert('Error: ' + error.message); return }
+    setJobs(p => p.filter(j => j.id !== id))
+  }
+
+  async function updateStatus(id, status) {
+    const { error } = await supabase.from('jobs').update({ status }).eq('id', id)
+    if (error) { alert('Error: ' + error.message); return }
+    setJobs(p => p.map(j => j.id === id ? { ...j, status } : j))
+  }
+
+  // ── SCREEN ROUTING AFTER ALL FUNCTIONS ──
+  if (appState === 'landing') return <LandingPage onEnter={() => setAppState('login')} />
+  if (appState === 'login')   return <LoginScreen onLogin={handleLogin} onBack={() => setAppState('landing')} error={loginError} />
+  if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('app')} />
+
   if (screen === 'form') return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} />
   if (screen === 'bill') return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
 
@@ -106,7 +149,8 @@ export default function App() {
     <JobList
       jobs={jobs} loading={loading} error={error}
       onNew={openNew} onEdit={openEdit} onBill={openBill}
-      onDelete={deleteJob} onStatusChange={updateStatus} onRefresh={loadJobs}
+      onDelete={deleteJob} onStatusChange={updateStatus}
+      onRefresh={() => setAppState('loading')}
     />
   )
 }
@@ -124,8 +168,8 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh' }}>
-      <div style={{ background: 'linear-gradient(135deg, #185FA5 0%, #1E40AF 100%)', padding: '20px 16px 24px' }}>
+    <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh' }}>
+      <div style={{ background: 'linear-gradient(135deg, #185FA5 0%, #1E40AF 100%)', padding: '20px 5% 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <div style={{ color: '#fff', fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -154,7 +198,7 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
         </div>
       </div>
 
-      <div style={{ padding: '0 12px 24px', marginTop: -8 }}>
+      <div style={{ padding: '0 5% 24px', marginTop: -8 }}>
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 12, scrollbarWidth: 'none' }}>
           {tabs.map(t => {
             const count  = t === 'All' ? jobs.length : jobs.filter(j => j.status === t).length
@@ -338,10 +382,10 @@ function handlePrint() {
 }
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', background: '#F0F4F8' }}>
+    <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#F0F4F8' }}>
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)', padding: '16px 16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ background: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)', padding: '16px 5% 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button onClick={onBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>🧾 Create Bill</div>
@@ -349,7 +393,7 @@ function handlePrint() {
         </div>
       </div>
 
-      <div style={{ padding: '12px 12px 32px' }}>
+      <div style={{ padding: '12px 5% 32px' }}>
 
         {/* Customer + vehicle summary */}
         <Card title="📋 Job Summary">
@@ -503,8 +547,8 @@ function JobCardForm({ initialData, onSave, onBack }) {
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', background: '#F0F4F8' }}>
-      <div style={{ background: 'linear-gradient(135deg, #185FA5 0%, #1E40AF 100%)', padding: '16px 16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#F0F4F8' }}>
+      <div style={{ background: 'linear-gradient(135deg, #185FA5 0%, #1E40AF 100%)', padding: '16px 5% 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button onClick={onBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
         <div>
           <div style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>{initialData ? 'Edit Job Card' : 'New Job Card'}</div>
@@ -512,7 +556,7 @@ function JobCardForm({ initialData, onSave, onBack }) {
         </div>
       </div>
 
-      <div style={{ padding: '12px 12px 32px' }}>
+      <div style={{ padding: '12px 5% 32px' }}>
         <Card title="👤 Customer Details">
           <Field label="Full Name *"><input placeholder="Customer name" value={form.customerName} onChange={e => handleChange('customerName', e.target.value)} /></Field>
           <Field label="Phone Number *"><input placeholder="+91 98471 23456" value={form.phone} onChange={e => handleChange('phone', e.target.value)} inputMode="tel" /></Field>

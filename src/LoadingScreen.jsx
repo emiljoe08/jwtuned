@@ -2,63 +2,105 @@ import { useEffect, useState } from 'react'
 import jwLogo from './assets/jwlogo.svg'
 
 export default function LoadingScreen({ onDone }) {
+  const [step, setStep]         = useState(0)
   const [progress, setProgress] = useState(0)
 
+  const steps = [
+    'Starting engine...',
+    'Loading job cards...',
+    'Connecting to database...',
+    'Syncing vehicles...',
+    'Ready to roll.',
+  ]
+
   useEffect(() => {
-    const steps = [20, 45, 70, 90, 100]
+    const targets = [18, 40, 65, 85, 100]
     let i = 0
     const interval = setInterval(() => {
-      if (i < steps.length) {
-        setProgress(steps[i])
+      if (i < targets.length) {
+        setProgress(targets[i])
+        setStep(i)
         i++
       } else {
         clearInterval(interval)
-        setTimeout(onDone, 400)
+        setTimeout(onDone, 600)
       }
-    }, 350)
+    }, 420)
     return () => clearInterval(interval)
   }, [])
 
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 60%, #185FA5 100%)',
+      background: '#0A0A0A',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      zIndex: 9999
+      zIndex: 9999,
+      fontFamily: "'Barlow', 'Segoe UI', sans-serif",
+      overflow: 'hidden',
     }}>
 
-      {/* Logo */}
-      <div style={{
-        width: 'clamp(90px, 12vmin, 160px)', height: 'clamp(90px, 12vmin, 160px)', borderRadius: 'clamp(24px, 3.5vmin, 48px)',
-        background: 'rgba(255,255,255,0.1)',
-        border: '1.5px solid rgba(255,255,255,0.2)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: 'clamp(24px, 4vmin, 40px)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)', overflow: 'hidden'
-      }}>
-        <img src={jwLogo} alt="JW Tuned Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '15%' }} />
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;700;800;900&display=swap');
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.5; }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .spinner {
+          width: 20px; height: 20px;
+          border: 2px solid rgba(255,255,255,0.1);
+          border-top-color: #E8310A;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          flex-shrink: 0;
+        }
+      `}</style>
+
+      {/* Background glow */}
+      <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', width: 500, height: 400, background: 'radial-gradient(ellipse, rgba(232,49,10,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+      {/* Large bg text */}
+      <div style={{ position: 'absolute', bottom: '-4%', right: '-2%', fontSize: 'clamp(80px, 18vw, 200px)', fontWeight: 900, color: 'rgba(255,255,255,0.02)', letterSpacing: '-8px', userSelect: 'none', pointerEvents: 'none', lineHeight: 1 }}>
+        TUNED
       </div>
 
+      {/* Logo */}
+      <img src={jwLogo} alt="JW Tuned" style={{ width: 64, height: 64, objectFit: 'contain', marginBottom: 24 }} />
+
       {/* Brand */}
-      <div style={{ color: '#fff', fontSize: 'clamp(32px, 5vmin, 64px)', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 'clamp(4px, 1vmin, 12px)' }}>
-        JW Tuned
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#E8310A', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8 }}>
+        Staff Dashboard
       </div>
-      <div style={{ color: '#93C5FD', fontSize: 'clamp(14px, 2.2vmin, 26px)', marginBottom: 'clamp(48px, 8vmin, 90px)' }}>
-        Garage Management System
+      <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.5px', marginBottom: 48 }}>
+        JW TUNED
       </div>
 
       {/* Progress bar */}
-      <div style={{ width: 'clamp(200px, 30vmin, 500px)', height: 'clamp(4px, 0.6vmin, 10px)', background: 'rgba(255,255,255,0.1)', borderRadius: 99, overflow: 'hidden', marginBottom: 'clamp(12px, 2vmin, 24px)' }}>
-        <div style={{
-          height: '100%', borderRadius: 99,
-          background: 'linear-gradient(90deg, #60A5FA, #34D399)',
-          width: `${progress}%`,
-          transition: 'width 0.35s ease'
-        }} />
+      <div style={{ width: 280, marginBottom: 16 }}>
+        <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            background: 'linear-gradient(90deg, #E8310A, #FF6B35)',
+            borderRadius: 99,
+            width: `${progress}%`,
+            transition: 'width 0.42s cubic-bezier(0.4, 0, 0.2, 1)',
+          }} />
+        </div>
       </div>
-      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 'clamp(12px, 1.8vmin, 22px)' }}>
-        {progress < 100 ? 'Loading...' : 'Ready!'}
+
+      {/* Step text */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 24 }}>
+        {progress < 100
+          ? <div className="spinner" />
+          : <span style={{ color: '#22C55E', fontSize: 16 }}>✓</span>
+        }
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.02em' }}>
+          {steps[step]}
+        </span>
       </div>
 
     </div>
