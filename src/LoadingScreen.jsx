@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import jwLogo from './assets/jwlogo.svg'
+import jwLogo from './assets/jjw.svg'
 
 export default function LoadingScreen({ onDone }) {
   const [step, setStep]         = useState(0)
@@ -37,6 +37,7 @@ export default function LoadingScreen({ onDone }) {
       alignItems: 'center', justifyContent: 'center',
       zIndex: 9999,
       fontFamily: "'Barlow', 'Segoe UI', sans-serif",
+      color: '#fff',
       overflow: 'hidden',
     }}>
 
@@ -52,11 +53,9 @@ export default function LoadingScreen({ onDone }) {
         }
         .spinner {
           width: 20px; height: 20px;
-          border: 2px solid rgba(255,255,255,0.1);
-          border-top-color: #E8310A;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
+          animation: spin 1.2s linear infinite;
           flex-shrink: 0;
+          object-fit: contain;
         }
       `}</style>
 
@@ -95,7 +94,7 @@ export default function LoadingScreen({ onDone }) {
       {/* Step text */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 24 }}>
         {progress < 100
-          ? <div className="spinner" />
+          ? <img src={jwLogo} alt="Loading" className="spinner" />
           : <span style={{ color: '#22C55E', fontSize: 16 }}>✓</span>
         }
         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.02em' }}>

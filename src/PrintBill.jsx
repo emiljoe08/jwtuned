@@ -1,4 +1,4 @@
-import jwLogo from './assets/jwlogo.svg'
+import jwLogo from './assets/jjw.svg'
 
 export function printBill({ job, items, discount, paid, payMode, note }) {
   const subtotal  = items.reduce((s, i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.rate)||0), 0)

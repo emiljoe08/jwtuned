@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import jwLogo from './assets/jwlogo.svg'
+import jwLogo from './assets/jjw.svg'
 
 const WhatsAppIcon = () => (
   <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" style={{ verticalAlign: 'middle' }}>
@@ -24,10 +24,11 @@ function FloatingGear({ size, x, y, duration, opacity, blur }) {
       animation: `gearSpin ${duration}s linear infinite`,
       pointerEvents: 'none',
       zIndex: 0,
+      color: 'rgba(255,255,255,0.7)'
     }}>
-      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M43.3 5.8L40 20.2C37.3 21.1 34.8 22.4 32.5 24L18.7 18.7L7.2 30.2L12.5 44C11 46.3 9.7 48.8 8.8 51.5L-5.6 54.8V71.2L8.8 74.5C9.7 77.2 11 79.7 12.5 82L7.2 95.8L18.7 107.3L32.5 102C34.8 103.6 37.3 104.9 40 105.8L43.3 120.2H59.7L63 105.8C65.7 104.9 68.2 103.6 70.5 102L84.3 107.3L95.8 95.8L90.5 82C92 79.7 93.3 77.2 94.2 74.5L108.6 71.2V54.8L94.2 51.5C93.3 48.8 92 46.3 90.5 44L95.8 30.2L84.3 18.7L70.5 24C68.2 22.4 65.7 21.1 63 20.2L59.7 5.8H43.3ZM51.5 35C64.5 35 75 45.5 75 58.5C75 71.5 64.5 82 51.5 82C38.5 82 28 71.5 28 58.5C28 45.5 38.5 35 51.5 35Z" fill="rgba(232,49,10,0.15)" stroke="rgba(232,49,10,0.3)" strokeWidth="2"/>
-        <circle cx="51.5" cy="58.5" r="14" fill="rgba(232,49,10,0.1)" stroke="rgba(232,49,10,0.3)" strokeWidth="2"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
       </svg>
     </div>
   )
@@ -65,7 +66,7 @@ function FAQItem({ q, a }) {
         <span style={{ color: '#E8310A', fontSize: 22, flexShrink: 0, transition: 'transform 0.3s', transform: open ? 'rotate(45deg)' : 'none', display: 'inline-block' }}>+</span>
       </button>
       <div style={{ maxHeight: open ? 200 : 0, overflow: 'hidden', transition: 'max-height 0.35s ease' }}>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, paddingBottom: 20 }}>{a}</p>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', lineHeight: 1.8, paddingBottom: 20 }}>{a}</p>
       </div>
     </div>
   )
@@ -76,6 +77,19 @@ export default function LandingPage({ onEnter }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeService, setActiveService] = useState(null)
   const [formData, setFormData] = useState({ name: '', phone: '', message: '' })
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0, cx: 0, cy: 0, active: false })
+
+  function handleMouseMove(e) {
+    const x = (e.clientX / window.innerWidth - 0.5) * 40;
+    const y = (e.clientY / window.innerHeight - 0.5) * 40;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({
+      x, y,
+      cx: e.clientX - rect.left,
+      cy: e.clientY - rect.top,
+      active: true
+    });
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -85,17 +99,28 @@ export default function LandingPage({ onEnter }) {
 
   const services = [
     { icon: '⚙️', title: 'Full Service', desc: 'Complete engine oil, filters, spark plugs, coolant top-up and full vehicle inspection.' },
-    { icon: '❄️', title: 'AC & Electrical', desc: 'Gas refilling, compressor diagnostics, wiring repairs, battery and alternator service.' },
-    { icon: '🛞', title: 'Tyres & Wheels', desc: 'Puncture repair, new tyre fitting, wheel balancing and four-wheel alignment.' },
+    { icon: '💨', title: 'Custom Exhausts & Headers', desc: 'Performance exhaust systems, custom headers, and muffler upgrades for enhanced sound and maximum power.' },
+    { icon: '🏎️', title: 'Custom Bodykits', desc: 'High-quality aero kits, spoilers, bumpers, and side skirts to give your vehicle a unique, aggressive look.' },
     { icon: '🔩', title: 'Suspension & Brakes', desc: 'Shock absorbers, brake pads, disc and drum service for safe, comfortable driving.' },
     { icon: '🏍️', title: 'Two-Wheeler Service', desc: 'Engine tune-up, chain service, brake pads — everything your bike or scooter needs.' },
     { icon: '🔬', title: 'Diagnostics', desc: 'Computer diagnostics, engine fault reading, and full pre-purchase inspection reports.' },
   ]
 
   const brands = [
-    'Maruti', 'Hyundai', 'Tata', 'Honda', 'Toyota', 'Kia',
-    'Mahindra', 'Ford', 'Volkswagen', 'Skoda', 'MG', 'Renault',
+    { name: 'Suzuki', slug: 'suzuki' },
+    { name: 'Hyundai', slug: 'hyundai' },
+    { name: 'Honda', slug: 'honda' },
+    { name: 'Toyota', slug: 'toyota' },
+    { name: 'Kia', slug: 'kia' },
+    { name: 'Ford', slug: 'ford' },
+    { name: 'Volkswagen', slug: 'volkswagen' },
+    { name: 'Skoda', slug: 'skoda' },
+    { name: 'Renault', slug: 'renault' },
+    { name: 'BMW', slug: 'bmw' },
+    { name: 'Mercedes', slug: 'mercedes' },
+    { name: 'Nissan', slug: 'nissan' },
   ]
+  const marqueeBrands = [...brands, ...brands, ...brands, ...brands]
 
   const faqs = [
     { q: 'Where are you located?', a: 'We are located in Kottayam, Kerala. Contact us on WhatsApp or call for the exact address and directions.' },
@@ -113,12 +138,20 @@ export default function LandingPage({ onEnter }) {
     { value: '100%', label: 'Genuine Parts' },
   ]
 
+  const testimonials = [
+    { name: 'Rahul S.', text: 'Best workshop in Kottayam! They kept me updated on WhatsApp with photos. Very transparent.', vehicle: 'Honda City', rating: '⭐⭐⭐⭐⭐' },
+    { name: 'Kiran V.', text: 'Quick and professional service. The mechanics really know what they are doing. Highly recommended.', vehicle: 'Royal Enfield Classic 350', rating: '⭐⭐⭐⭐⭐' },
+    { name: 'Anoop T.', text: 'Genuine parts and no hidden charges. The itemised billing is something you rarely see around here.', vehicle: 'Maruti Swift', rating: '⭐⭐⭐⭐⭐' }
+  ]
+  const marqueeTestimonials = [...testimonials, ...testimonials, ...testimonials, ...testimonials]
+
   return (
     <div style={{ background: '#0A0A0A', color: '#fff', fontFamily: "'Barlow', 'Segoe UI', sans-serif", overflowX: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;0,900;1,800&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
+        h1, h2, h3, h4, h5, h6 { color: inherit; }
 
         @keyframes gearSpin { to { transform: rotate(360deg); } }
         @keyframes float { 0%,100% { transform: translateY(0px) rotateX(15deg) rotateY(-15deg); } 50% { transform: translateY(-20px) rotateX(15deg) rotateY(-15deg); } }
@@ -126,12 +159,21 @@ export default function LandingPage({ onEnter }) {
         @keyframes fadeUp { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
         @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
         @keyframes pulse3d { 0%,100% { box-shadow: 0 0 0 0 rgba(232,49,10,0.4); } 50% { box-shadow: 0 0 0 20px rgba(232,49,10,0); } }
+        @keyframes logoFloat { 0%, 100% { transform: scale(1); opacity: 0.015; } 50% { transform: scale(1.05); opacity: 0.03; } }
 
         .fade-up { animation: fadeUp 0.7s ease forwards; opacity: 0; }
         .d1 { animation-delay: 0.1s; } .d2 { animation-delay: 0.25s; }
         .d3 { animation-delay: 0.4s; } .d4 { animation-delay: 0.55s; }
 
-        .nav-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; transition: color 0.2s; }
+        @keyframes scrollX { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .scroll-track { display: flex; width: max-content; animation: scrollX 30s linear infinite; }
+        .scroll-track:hover { animation-play-state: paused; }
+        .brand-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; width: 140px; height: 80px; transition: all 0.25s ease; cursor: pointer; }
+        .brand-card:hover { background: rgba(232,49,10,0.1); border-color: rgba(232,49,10,0.3); transform: translateY(-4px); }
+        .brand-card img { transition: all 0.25s ease; filter: brightness(0.5); }
+        .brand-card:hover img { filter: brightness(1); }
+
+        .nav-link { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; transition: color 0.2s; }
         .nav-link:hover { color: #fff; }
 
         .btn-red { display:inline-flex; align-items:center; gap:8px; background:#E8310A; color:#fff; border:none; border-radius:4px; padding:14px 28px; font-family:inherit; font-size:14px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; text-decoration:none; transition:all 0.2s; position:relative; overflow:hidden; }
@@ -155,7 +197,7 @@ export default function LandingPage({ onEnter }) {
 
         .contact-input { width:100%; height:48px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.1); border-radius:6px; color:#fff; font-family:inherit; font-size:14px; padding:0 16px; outline:none; transition:border-color 0.2s; }
         .contact-input:focus { border-color:#E8310A; }
-        .contact-input::placeholder { color:rgba(255,255,255,0.25); }
+        .contact-input::placeholder { color:rgba(255,255,255,0.5); }
         textarea.contact-input { height:120px; padding:14px 16px; resize:none; }
 
         @media (max-width:768px) {
@@ -181,15 +223,15 @@ export default function LandingPage({ onEnter }) {
       {/* ── NAV ── */}
       <nav style={{ position:'sticky', top:0, zIndex:200, padding:'0 5%', height:68, display:'flex', alignItems:'center', justifyContent:'space-between', background: scrolled ? 'rgba(10,10,10,0.97)' : 'transparent', backdropFilter: scrolled ? 'blur(16px)' : 'none', borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : 'none', transition:'all 0.3s' }}>
         <div style={{ display:'flex', alignItems:'center' }}>
-          <img src={jwLogo} alt="JW Tuned" style={{ height:38, objectFit:'contain' }} />
+          <img src='./src/assets/jwlogo.svg' alt="JW Tuned" style={{ height:38, objectFit:'contain' }} />
         </div>
         <div className="desktop-nav" style={{ display:'flex', alignItems:'center', gap:28 }}>
-          {['#services','#process','#about','#faq','#contact'].map((href,i) => (
-            <a key={href} href={href} className="nav-link">{['Services','Process','About','FAQ','Contact'][i]}</a>
+          {['#services','#process','#about','#testimonials','#faq','#contact'].map((href,i) => (
+            <a key={href} href={href} className="nav-link">{['Services','Process','About','Reviews','FAQ','Contact'][i]}</a>
           ))}
           <a href="https://www.instagram.com/jw_tuned" target="_blank" rel="noreferrer" className="nav-link"><InstagramIcon /></a>
           <a href="tel:+919447403837" className="btn-red" style={{ padding:'9px 18px', fontSize:13 }}>📞 Book Now</a>
-          <button onClick={onEnter} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.25)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Staff →</button>
+          <button onClick={onEnter} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Staff →</button>
         </div>
         <button className="mobile-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ background:'none', border:'none', color:'#fff', fontSize:22, cursor:'pointer', display:'flex', alignItems:'center' }}>
           {menuOpen ? '✕' : '☰'}
@@ -199,45 +241,63 @@ export default function LandingPage({ onEnter }) {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="mobile-menu" style={{ position:'fixed', top:68, inset:'68px 0 0', background:'#0A0A0A', zIndex:199, padding:'32px 24px', display:'flex', flexDirection:'column', gap:4, overflowY:'auto' }}>
-          {['#services','#process','#about','#faq','#contact'].map((href,i) => (
+          {['#services','#process','#about','#testimonials','#faq','#contact'].map((href,i) => (
             <a key={href} href={href} onClick={() => setMenuOpen(false)} style={{ color:'#fff', textDecoration:'none', fontSize:26, fontWeight:800, padding:'12px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', letterSpacing:'-0.3px' }}>
-              {['Services','Process','About','FAQ','Contact'][i]}
+              {['Services','Process','About','Reviews','FAQ','Contact'][i]}
             </a>
           ))}
           <div style={{ display:'flex', gap:12, marginTop:24, flexDirection:'column' }}>
             <a href="tel:+919447403837" className="btn-red" style={{ justifyContent:'center' }}>📞 Book a Service</a>
             <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" className="btn-ghost" style={{ justifyContent:'center' }}><WhatsAppIcon /> WhatsApp</a>
-            <button onClick={() => { setMenuOpen(false); onEnter() }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.25)', fontSize:13, cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>Staff Portal →</button>
+            <button onClick={() => { setMenuOpen(false); onEnter() }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', fontSize:13, cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>Staff Portal →</button>
           </div>
         </div>
       )}
 
       {/* ── HERO ── */}
-      <div style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', padding:'100px 5% 80px', overflow:'hidden' }}>
+      <div style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', padding:'100px 5% 80px', overflow:'hidden' }} onMouseMove={handleMouseMove} onMouseLeave={() => setMousePos(p => ({ ...p, active: false }))}>
 
         {/* Layered background */}
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg, #0A0A0A 0%, #0F0F0F 40%, #110808 100%)' }} />
-        <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(rgba(232,49,10,0.06) 1px, transparent 1px)', backgroundSize:'40px 40px' }} />
+        <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(rgba(232,49,10,0.06) 1px, transparent 1px)', backgroundSize:'40px 40px', transition: 'transform 0.1s ease-out', transform: `translate(${mousePos.x * 0.1}px, ${mousePos.y * 0.1}px)` }} />
         <div style={{ position:'absolute', top:'10%', right:'-10%', width:'60%', height:'80%', background:'radial-gradient(ellipse, rgba(232,49,10,0.15) 0%, transparent 65%)', pointerEvents:'none' }} />
 
-        {/* Floating 3D gears */}
-        <div className="gear-bg">
-          <FloatingGear size={180} x="62%" y="8%" duration={25} opacity={0.6} />
-          <FloatingGear size={100} x="78%" y="55%" duration={18} opacity={0.4} blur={1} />
-          <FloatingGear size={60}  x="55%" y="70%" duration={12} opacity={0.3} blur={2} />
+        {/* Subtle Background Logo Following Mouse */}
+        <div style={{ position: 'absolute', left: mousePos.active ? mousePos.cx : '80%', top: mousePos.active ? mousePos.cy : '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none', zIndex: 0, transition: mousePos.active ? 'left 0.15s ease-out, top 0.15s ease-out' : 'left 0.8s cubic-bezier(0.2, 1, 0.2, 1), top 0.8s cubic-bezier(0.2, 1, 0.2, 1)' }}>
+          <img
+            src={jwLogo}
+            alt=""
+            style={{
+              width: 'clamp(300px, 45vw, 700px)',
+              animation: 'logoFloat 12s ease-in-out infinite'
+            }}
+          />
         </div>
 
-        {/* 3D floating cube accent */}
-        <div className="gear-bg" style={{ position:'absolute', right:'8%', top:'20%', width:160, height:160, transformStyle:'preserve-3d', animation:'float 6s ease-in-out infinite' }}>
-          <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg, rgba(232,49,10,0.15), rgba(232,49,10,0.03))', border:'1px solid rgba(232,49,10,0.2)', borderRadius:16, backdropFilter:'blur(4px)', transform:'perspective(400px) rotateX(15deg) rotateY(-15deg)', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 60px rgba(232,49,10,0.1)' }}>
-            <div style={{ position:'absolute', inset:1, background:'linear-gradient(135deg, rgba(255,255,255,0.05), transparent)', borderRadius:15 }} />
-            <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', fontSize:48 }}>🔧</div>
+        {/* Floating 3D gears */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transition: 'transform 0.1s ease-out', transform: `translate(${mousePos.x * -0.3}px, ${mousePos.y * -0.3}px)` }}>
+          <div className="gear-bg">
+            <FloatingGear size={180} x="62%" y="8%" duration={25} opacity={0.12} />
+            <FloatingGear size={100} x="78%" y="55%" duration={18} opacity={0.08} blur={1} />
+            <FloatingGear size={60}  x="55%" y="70%" duration={12} opacity={0.04} blur={2} />
           </div>
         </div>
 
-        <div style={{ position:'absolute', right:'18%', bottom:'15%', width:100, height:100, transformStyle:'preserve-3d', animation:'floatDelay 8s ease-in-out infinite' }} className="gear-bg">
-          <div style={{ width:'100%', height:'100%', background:'rgba(232,49,10,0.08)', border:'1px solid rgba(232,49,10,0.15)', borderRadius:12, transform:'perspective(300px) rotateX(-10deg) rotateY(20deg)' }}>
-            <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', fontSize:30 }}>⚡</div>
+        {/* 3D floating cube accent */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transition: 'transform 0.1s ease-out', transform: `translate(${mousePos.x * 0.5}px, ${mousePos.y * 0.5}px)` }}>
+          <div className="gear-bg" style={{ position:'absolute', right:'8%', top:'20%', width:160, height:160, transformStyle:'preserve-3d', animation:'float 6s ease-in-out infinite' }}>
+            <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01))', border:'1px solid rgba(255,255,255,0.15)', borderRadius:16, backdropFilter:'blur(4px)', transform:'perspective(400px) rotateX(15deg) rotateY(-15deg)', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 60px rgba(0,0,0,0.5)' }}>
+              <div style={{ position:'absolute', inset:1, background:'linear-gradient(135deg, rgba(255,255,255,0.05), transparent)', borderRadius:15 }} />
+              <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', fontSize:48 }}>🔧</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transition: 'transform 0.1s ease-out', transform: `translate(${mousePos.x * 0.8}px, ${mousePos.y * 0.8}px)` }}>
+          <div style={{ position:'absolute', right:'18%', bottom:'15%', width:100, height:100, transformStyle:'preserve-3d', animation:'floatDelay 8s ease-in-out infinite' }} className="gear-bg">
+            <div style={{ width:'100%', height:'100%', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, transform:'perspective(300px) rotateX(-10deg) rotateY(20deg)' }}>
+              <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', fontSize:30 }}>⚡</div>
+            </div>
           </div>
         </div>
 
@@ -254,7 +314,7 @@ export default function LandingPage({ onEnter }) {
               SERVICE.
             </h1>
 
-            <p className="fade-up d3" style={{ fontSize:'clamp(15px,1.8vw,18px)', color:'rgba(255,255,255,0.5)', lineHeight:1.75, maxWidth:460, marginBottom:36 }}>
+            <p className="fade-up d3" style={{ fontSize:'clamp(15px,1.8vw,18px)', color:'rgba(255,255,255,0.85)', lineHeight:1.75, maxWidth:460, marginBottom:36 }}>
               Professional servicing for all cars and two-wheelers in Kottayam. Genuine parts, transparent pricing, WhatsApp updates at every step.
             </p>
 
@@ -271,19 +331,21 @@ export default function LandingPage({ onEnter }) {
             </div>
 
             <div className="fade-up d4" style={{ marginTop:36, display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color:'rgba(255,255,255,0.35)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color:'rgba(255,255,255,0.7)' }}>
                 <span style={{ color:'#22C55E' }}>●</span> Open Today · 9 AM – 7 PM
               </div>
               <div style={{ width:1, height:14, background:'rgba(255,255,255,0.12)' }} />
-              <div style={{ fontSize:13, color:'rgba(255,255,255,0.35)' }}>📍 Kottayam, Kerala</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.7)' }}>📍 Kottayam, Kerala</div>
               <div style={{ width:1, height:14, background:'rgba(255,255,255,0.12)' }} />
-              <div style={{ fontSize:13, color:'rgba(255,255,255,0.35)' }}>+91 9447403837</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.7)' }}>+91 9447403837</div>
             </div>
           </div>
         </div>
 
         {/* Watermark */}
-        <div style={{ position:'absolute', bottom:'-3%', right:'-1%', fontSize:'clamp(70px,14vw,170px)', fontWeight:900, color:'rgba(255,255,255,0.015)', letterSpacing:'-6px', userSelect:'none', pointerEvents:'none', lineHeight:1 }}>TUNED</div>
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transition: 'transform 0.1s ease-out', transform: `translate(${mousePos.x * 0.2}px, ${mousePos.y * 0.2}px)` }}>
+          <div style={{ position:'absolute', bottom:'-3%', right:'-1%', fontSize:'clamp(70px,14vw,170px)', fontWeight:900, color:'rgba(255,255,255,0.015)', letterSpacing:'-6px', userSelect:'none', pointerEvents:'none', lineHeight:1 }}>TUNED</div>
+        </div>
       </div>
 
       {/* ── STATS BAR ── */}
@@ -292,7 +354,7 @@ export default function LandingPage({ onEnter }) {
           {stats.map((s, i) => (
             <div key={s.label} className="stat-block" style={{ borderRight: i < 3 ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
               <div style={{ fontSize:'clamp(28px,4vw,42px)', fontWeight:900, letterSpacing:'-1px', lineHeight:1 }}>{s.value}</div>
-              <div style={{ fontSize:11, color:'rgba(255,255,255,0.7)', marginTop:5, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase' }}>{s.label}</div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.9)', marginTop:5, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase' }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -307,7 +369,7 @@ export default function LandingPage({ onEnter }) {
               <h2 style={{ fontSize:'clamp(30px,5vw,52px)', fontWeight:900, letterSpacing:'-1.5px', lineHeight:1.05 }}>
                 OUR<br />SERVICES
               </h2>
-              <p style={{ fontSize:15, color:'rgba(255,255,255,0.4)', maxWidth:320, lineHeight:1.7 }}>
+              <p style={{ fontSize:15, color:'rgba(255,255,255,0.75)', maxWidth:320, lineHeight:1.7 }}>
                 From quick fixes to full overhauls — we handle everything your vehicle needs.
               </p>
             </div>
@@ -319,7 +381,7 @@ export default function LandingPage({ onEnter }) {
                 <div className="svc-card" onClick={() => setActiveService(activeService === i ? null : i)}>
                   <div style={{ fontSize:36, marginBottom:16 }}>{s.icon}</div>
                   <h3 style={{ fontSize:17, fontWeight:800, marginBottom:10, letterSpacing:'-0.3px' }}>{s.title}</h3>
-                  <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.7, marginBottom:16 }}>{s.desc}</p>
+                  <p style={{ fontSize:13, color:'rgba(255,255,255,0.8)', lineHeight:1.7, marginBottom:16 }}>{s.desc}</p>
                   <a href="tel:+919447403837" className="btn-red" style={{ fontSize:12, padding:'9px 16px' }}>Book Now →</a>
                 </div>
               </TiltCard>
@@ -330,7 +392,7 @@ export default function LandingPage({ onEnter }) {
           <div style={{ marginTop:32, background:'rgba(232,49,10,0.05)', border:'1px solid rgba(232,49,10,0.15)', borderRadius:10, padding:'24px 28px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }}>
             <div>
               <div style={{ fontSize:16, fontWeight:800, marginBottom:4 }}>Looking for something else?</div>
-              <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', fontStyle:'italic' }}>We offer many additional services — just ask.</div>
+              <div style={{ fontSize:14, color:'rgba(255,255,255,0.8)', fontStyle:'italic' }}>We offer many additional services — just ask.</div>
             </div>
             <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" className="btn-red"><WhatsAppIcon /> Ask on WhatsApp</a>
           </div>
@@ -346,10 +408,10 @@ export default function LandingPage({ onEnter }) {
             <h2 style={{ fontSize:'clamp(30px,5vw,48px)', fontWeight:900, letterSpacing:'-1px', lineHeight:1.05, marginBottom:24 }}>
               ABOUT<br />JW TUNED
             </h2>
-            <p style={{ fontSize:15, color:'rgba(255,255,255,0.5)', lineHeight:1.8, marginBottom:20 }}>
+            <p style={{ fontSize:15, color:'rgba(255,255,255,0.85)', lineHeight:1.8, marginBottom:20 }}>
               JW Tuned is a professional auto service workshop based in Kottayam, Kerala. We specialise in servicing both two-wheelers and four-wheelers with a focus on quality, transparency, and customer satisfaction.
             </p>
-            <p style={{ fontSize:15, color:'rgba(255,255,255,0.5)', lineHeight:1.8, marginBottom:32 }}>
+            <p style={{ fontSize:15, color:'rgba(255,255,255,0.85)', lineHeight:1.8, marginBottom:32 }}>
               With over 5 years of hands-on experience, our team has serviced 1000+ vehicles across all major brands. We believe in honest work, genuine parts, and keeping you informed at every step.
             </p>
             <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
@@ -371,7 +433,7 @@ export default function LandingPage({ onEnter }) {
                   <span style={{ fontSize:24, flexShrink:0 }}>{f.icon}</span>
                   <div>
                     <div style={{ fontSize:14, fontWeight:800, marginBottom:4 }}>{f.t}</div>
-                    <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', lineHeight:1.6 }}>{f.d}</div>
+                    <div style={{ fontSize:13, color:'rgba(255,255,255,0.75)', lineHeight:1.6 }}>{f.d}</div>
                   </div>
                 </div>
               </TiltCard>
@@ -400,7 +462,7 @@ export default function LandingPage({ onEnter }) {
                   <div style={{ fontSize:60, fontWeight:900, color:'rgba(232,49,10,0.08)', position:'absolute', top:-10, right:10, lineHeight:1, pointerEvents:'none' }}>{p.step}</div>
                   <div style={{ fontSize:32, marginBottom:14, position:'relative' }}>{p.icon}</div>
                   <div style={{ fontSize:16, fontWeight:800, marginBottom:8, position:'relative' }}>{p.t}</div>
-                  <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', lineHeight:1.65, position:'relative' }}>{p.d}</div>
+                  <div style={{ fontSize:13, color:'rgba(255,255,255,0.75)', lineHeight:1.65, position:'relative' }}>{p.d}</div>
                 </div>
               </TiltCard>
             ))}
@@ -409,15 +471,59 @@ export default function LandingPage({ onEnter }) {
       </div>
 
       {/* ── BRANDS ── */}
-      <div style={{ background:'#0F0F0F', borderTop:'1px solid rgba(255,255,255,0.05)', padding:'clamp(48px,6vw,72px) 5%' }}>
-        <div style={{ margin:'0 auto', width:'100%' }}>
+      <div style={{ background:'#0F0F0F', borderTop:'1px solid rgba(255,255,255,0.05)', padding:'clamp(48px,6vw,72px) 0', overflow:'hidden' }}>
+        <div style={{ margin:'0 auto', width:'100%', padding:'0 5%' }}>
           <div style={{ fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:12 }}>// Brands</div>
-          <h2 style={{ fontSize:'clamp(24px,4vw,40px)', fontWeight:900, letterSpacing:'-1px', marginBottom:32 }}>
+          <h2 style={{ fontSize:'clamp(24px,4vw,40px)', fontWeight:900, letterSpacing:'-1px' }}>
             BRANDS THAT<br /><em style={{ fontStyle:'italic', color:'#E8310A' }}>WE SERVICE</em>
           </h2>
-          <div className="brands-grid" style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10 }}>
-            {brands.map(b => (
-              <div key={b} className="brand-pill">{b}</div>
+        </div>
+        <div style={{ position:'relative', marginTop: 32 }}>
+          <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'10%', background:'linear-gradient(to right, #0F0F0F, transparent)', zIndex:2, pointerEvents:'none' }} />
+          <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'10%', background:'linear-gradient(to left, #0F0F0F, transparent)', zIndex:2, pointerEvents:'none' }} />
+          <div className="scroll-track" style={{ animationDuration: '35s' }}>
+            {marqueeBrands.map((b, i) => (
+              <div key={i} style={{ paddingRight: 20 }}>
+                <div className="brand-card">
+                  <img src={`https://cdn.simpleicons.org/${b.slug}/ffffff`} alt={b.name} style={{ height: 36, width: 36, objectFit: 'contain' }} title={b.name} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── TESTIMONIALS ── */}
+      <div id="testimonials" style={{ padding:'clamp(60px,8vw,100px) 0', overflow:'hidden' }}>
+        <div style={{ margin:'0 auto', width:'100%', padding:'0 5%' }}>
+          <div style={{ marginBottom:52, textAlign:'center' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:12 }}>// Testimonials</div>
+            <h2 style={{ fontSize:'clamp(30px,5vw,52px)', fontWeight:900, letterSpacing:'-1.5px', lineHeight:1.05 }}>
+              WHAT OUR<br /><em style={{ fontStyle:'italic', color:'#E8310A' }}>CUSTOMERS SAY</em>
+            </h2>
+          </div>
+        </div>
+        
+        <div style={{ position:'relative' }}>
+          <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'10%', background:'linear-gradient(to right, #0A0A0A, transparent)', zIndex:2, pointerEvents:'none' }} />
+          <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'10%', background:'linear-gradient(to left, #0A0A0A, transparent)', zIndex:2, pointerEvents:'none' }} />
+          <div className="scroll-track" style={{ animationDuration: '50s' }}>
+            {marqueeTestimonials.map((t, i) => (
+              <div key={i} style={{ width: 380, paddingRight: 24, flexShrink: 0, height: '100%' }}>
+                <TiltCard style={{ height: '100%' }}>
+                  <div className="svc-card" style={{ padding:'32px 24px', display:'flex', flexDirection:'column', height:'100%' }}>
+                    <div style={{ fontSize:14, marginBottom:16 }}>{t.rating}</div>
+                    <p style={{ fontSize:15, color:'rgba(255,255,255,0.9)', lineHeight:1.7, fontStyle:'italic', flex:1, marginBottom:24 }}>"{t.text}"</p>
+                    <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                      <div style={{ width:40, height:40, borderRadius:'50%', background:'rgba(232,49,10,0.1)', display:'flex', alignItems:'center', justifyContent:'center', color:'#E8310A', fontWeight:800, fontSize:14 }}>{t.name.charAt(0)}</div>
+                      <div>
+                        <div style={{ fontSize:14, fontWeight:800 }}>{t.name}</div>
+                        <div style={{ fontSize:12, color:'rgba(255,255,255,0.7)' }}>{t.vehicle}</div>
+                      </div>
+                    </div>
+                  </div>
+                </TiltCard>
+              </div>
             ))}
           </div>
         </div>
@@ -459,7 +565,7 @@ export default function LandingPage({ onEnter }) {
                 <a key={c.label} href={c.href} target={c.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer" style={{ textDecoration:'none', display:'flex', gap:16, alignItems:'center', padding:'20px 22px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, transition:'all 0.2s', color:'#fff' }}>
                   <div style={{ width:44, height:44, background:'rgba(232,49,10,0.1)', border:'1px solid rgba(232,49,10,0.2)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>{c.icon}</div>
                   <div>
-                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:3 }}>{c.label}</div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:3 }}>{c.label}</div>
                     <div style={{ fontSize:16, fontWeight:800 }}>{c.val}</div>
                   </div>
                 </a>
@@ -467,14 +573,14 @@ export default function LandingPage({ onEnter }) {
 
               {/* Hours */}
               <div style={{ padding:'20px 22px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10 }}>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:14 }}>🕐 Working Hours</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:14 }}>🕐 Working Hours</div>
                 {[
                   { d:'Mon – Fri', t:'8:00 AM – 7:00 PM', o:true },
                   { d:'Saturday',  t:'8:00 AM – 5:00 PM', o:true },
                   { d:'Sunday',    t:'Closed',             o:false },
                 ].map(h => (
                   <div key={h.d} style={{ display:'flex', justifyContent:'space-between', marginBottom:10, fontSize:14 }}>
-                    <span style={{ color:'rgba(255,255,255,0.55)' }}>{h.d}</span>
+                    <span style={{ color:'rgba(255,255,255,0.85)' }}>{h.d}</span>
                     <span style={{ fontWeight:700, color: h.o ? '#22C55E' : '#EF4444' }}>{h.t}</span>
                   </div>
                 ))}
@@ -484,7 +590,7 @@ export default function LandingPage({ onEnter }) {
             {/* Form */}
             <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:12, padding:32 }}>
               <div style={{ fontSize:16, fontWeight:800, marginBottom:6 }}>Send us a message</div>
-              <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:24 }}>We'll get back to you on WhatsApp.</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.7)', marginBottom:24 }}>We'll get back to you on WhatsApp.</div>
               <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
                 <input className="contact-input" placeholder="Your Name" value={formData.name} onChange={e => setFormData(p => ({...p, name:e.target.value}))} />
                 <input className="contact-input" placeholder="Phone Number" value={formData.phone} onChange={e => setFormData(p => ({...p, phone:e.target.value}))} inputMode="tel" />
@@ -510,15 +616,15 @@ export default function LandingPage({ onEnter }) {
             <img src={jwLogo} alt="JW Tuned" style={{ height:30, objectFit:'contain' }} />
             <div>
               <div style={{ fontWeight:900, fontSize:14, letterSpacing:'-0.3px' }}>JW TUNED</div>
-              <div style={{ fontSize:10, color:'rgba(255,255,255,0.25)', letterSpacing:'0.1em' }}>KOTTAYAM · KERALA</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', letterSpacing:'0.1em' }}>KOTTAYAM · KERALA</div>
             </div>
           </div>
           <div style={{ display:'flex', gap:20, alignItems:'center', flexWrap:'wrap', justifyContent:'center' }}>
-            <span style={{ fontSize:12, color:'rgba(255,255,255,0.25)' }}>© {new Date().getFullYear()} JW Tuned</span>
-            <a href="https://www.instagram.com/jw_tuned" target="_blank" rel="noreferrer" style={{ color:'rgba(255,255,255,0.35)', fontSize:13, textDecoration:'none' }}><InstagramIcon /></a>
-            <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" style={{ color:'rgba(255,255,255,0.35)', fontSize:13, textDecoration:'none' }}><WhatsAppIcon /></a>
+            <span style={{ fontSize:12, color:'rgba(255,255,255,0.6)' }}>© {new Date().getFullYear()} JW Tuned</span>
+            <a href="https://www.instagram.com/jw_tuned" target="_blank" rel="noreferrer" style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none' }}><InstagramIcon /></a>
+            <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none' }}><WhatsAppIcon /></a>
           </div>
-          <button onClick={onEnter} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.18)', fontSize:12, cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.05em' }}>
+          <button onClick={onEnter} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', fontSize:12, cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.05em' }}>
             Staff Portal →
           </button>
         </div>

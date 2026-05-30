@@ -4,7 +4,7 @@ import { supabase } from './supabase'
 import { printBill } from './PrintBill'
 import LoadingScreen from './LoadingScreen'
 import LandingPage from './LandingPage'
-import jwLogo from './assets/jwlogo.svg'
+import jwLogo from './assets/jjw.svg'
 import LoginScreen from './LoginScreen'
 
 const STATUS = {
@@ -138,20 +138,38 @@ export default function App() {
   }
 
   // ── SCREEN ROUTING AFTER ALL FUNCTIONS ──
-  if (appState === 'landing') return <LandingPage onEnter={() => setAppState('login')} />
-  if (appState === 'login')   return <LoginScreen onLogin={handleLogin} onBack={() => setAppState('landing')} error={loginError} />
-  if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('app')} />
+  const renderScreen = () => {
+    if (appState === 'landing') return <LandingPage onEnter={() => setAppState('login')} />
+    if (appState === 'login')   return <LoginScreen onLogin={handleLogin} onBack={() => setAppState('landing')} error={loginError} />
+    if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('app')} />
 
-  if (screen === 'form') return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} />
-  if (screen === 'bill') return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
+    if (screen === 'form') return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} />
+    if (screen === 'bill') return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
+
+    return (
+      <JobList
+        jobs={jobs} loading={loading} error={error}
+        onNew={openNew} onEdit={openEdit} onBill={openBill}
+        onDelete={deleteJob} onStatusChange={updateStatus}
+        onRefresh={() => setAppState('loading')}
+      />
+    )
+  }
 
   return (
-    <JobList
-      jobs={jobs} loading={loading} error={error}
-      onNew={openNew} onEdit={openEdit} onBill={openBill}
-      onDelete={deleteJob} onStatusChange={updateStatus}
-      onRefresh={() => setAppState('loading')}
-    />
+    <>
+      <style>{`
+        #root {
+          max-width: none !important;
+          width: 100% !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          text-align: left !important;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+      {renderScreen()}
+    </>
   )
 }
 
@@ -212,7 +230,7 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
           })}
         </div>
 
-        {loading && <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}><div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div><div style={{ fontSize: 14, fontWeight: 600 }}>Loading jobs...</div></div>}
+        {loading && <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}><img src={jwLogo} alt="Loading" style={{ width: 36, height: 36, marginBottom: 12, animation: 'spin 1.2s linear infinite', filter: 'invert(1) opacity(0.3)' }} /><div style={{ fontSize: 14, fontWeight: 600 }}>Loading jobs...</div></div>}
         {error && !loading && (
           <div style={{ background: '#FFF5F5', border: '1px solid #FECACA', borderRadius: 12, padding: 16, textAlign: 'center', color: '#DC2626', marginBottom: 12 }}>
             <div style={{ fontSize: 24, marginBottom: 8 }}>⚠️</div>
@@ -606,8 +624,8 @@ function JobCardForm({ initialData, onSave, onBack }) {
           <ImageUploader photos={form.photos || []} onChange={photos => handleChange('photos', photos)} />
         </Card>
 
-        <button onClick={handleSave} disabled={saving} style={{ width: '100%', height: 52, background: saving ? '#94A3B8' : 'linear-gradient(135deg, #185FA5, #1E40AF)', color: '#fff', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 14px rgba(24,95,165,0.35)', marginBottom: 10 }}>
-          {saving ? '⏳ Saving...' : `💾 ${initialData ? 'Update Job Card' : 'Save Job Card'}`}
+        <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: 52, background: saving ? '#94A3B8' : 'linear-gradient(135deg, #185FA5, #1E40AF)', color: '#fff', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 14px rgba(24,95,165,0.35)', marginBottom: 10 }}>
+          {saving ? <><img src={jwLogo} alt="" style={{ width: 20, height: 20, marginRight: 8, animation: 'spin 1.2s linear infinite', objectFit: 'contain' }} /> Saving...</> : `💾 ${initialData ? 'Update Job Card' : 'Save Job Card'}`}
         </button>
         <button onClick={onBack} style={{ width: '100%', height: 44, background: 'transparent', color: '#64748B', border: '1.5px solid #E2E8F0', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
       </div>

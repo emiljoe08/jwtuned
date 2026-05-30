@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import jwLogo from './assets/jwlogo.svg'
+import jwLogo from './assets/jjw.svg'
 
 export default function LoginScreen({ onLogin, onBack, error }) {
   const [password, setPassword] = useState('')
@@ -31,6 +31,7 @@ export default function LoginScreen({ onLogin, onBack, error }) {
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800;900&display=swap');
+        h1, h2, h3, h4, h5, h6 { color: inherit; }
 
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
