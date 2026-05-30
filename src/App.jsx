@@ -8,10 +8,10 @@ import jwLogo from './assets/jjw.svg'
 import LoginScreen from './LoginScreen'
 
 const STATUS = {
-  'Waiting':     { bg: '#FEF3E2', color: '#B45309', dot: '#F59E0B' },
-  'In Progress': { bg: '#EFF6FF', color: '#1D4ED8', dot: '#3B82F6' },
-  'Ready':       { bg: '#F0FDF4', color: '#15803D', dot: '#22C55E' },
-  'Delivered':   { bg: '#F8FAFC', color: '#64748B', dot: '#94A3B8' },
+  'Waiting':     { bg: 'rgba(245,158,11,0.1)', color: '#FCD34D', dot: '#F59E0B' },
+  'In Progress': { bg: 'rgba(59,130,246,0.1)', color: '#93C5FD', dot: '#3B82F6' },
+  'Ready':       { bg: 'rgba(34,197,94,0.1)',  color: '#6EE7B7', dot: '#22C55E' },
+  'Delivered':   { bg: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', dot: 'rgba(255,255,255,0.3)' },
 }
 
 let counter = 1
@@ -159,6 +159,7 @@ export default function App() {
   return (
     <>
       <style>{`
+        body { background: #050505; color: #fff; }
         #root {
           max-width: none !important;
           width: 100% !important;
@@ -167,6 +168,27 @@ export default function App() {
           text-align: left !important;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        input, textarea {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.1);
+          color: #fff;
+          border-radius: 8px;
+          padding: 12px 14px;
+          font-family: inherit;
+          font-size: 14px;
+          outline: none;
+          transition: all 0.3s ease;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        input:focus, textarea:focus {
+          border-color: #fff;
+          background: rgba(255,255,255,0.06);
+        }
+        input::placeholder, textarea::placeholder {
+          color: rgba(255,255,255,0.3);
+        }
       `}</style>
       {renderScreen()}
     </>
@@ -186,31 +208,31 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
   }
 
   return (
-    <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh' }}>
-      <div style={{ background: 'linear-gradient(135deg, #185FA5 0%, #1E40AF 100%)', padding: '20px 5% 24px' }}>
+    <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#050505' }}>
+      <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '20px 5% 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <div style={{ color: '#fff', fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
               <img src={jwLogo} alt="Logo" style={{ width: 24, height: 24, objectFit: 'contain' }} />
               JW Tuned
             </div>
-            <div style={{ color: '#93C5FD', fontSize: 12, marginTop: 2 }}>Garage Management</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 }}>Garage Management</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={onRefresh} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 10, width: 36, height: 36, fontSize: 16, cursor: 'pointer' }}>↻</button>
-            <button onClick={onNew} style={{ background: '#fff', color: '#185FA5', border: 'none', borderRadius: 10, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ New Job</button>
+            <button onClick={onRefresh} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: 10, width: 36, height: 36, fontSize: 16, cursor: 'pointer' }}>↻</button>
+            <button onClick={onNew} style={{ background: '#fff', color: '#050505', border: 'none', borderRadius: 10, padding: '8px 16px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>+ New Job</button>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
           {[
             { label: 'Total',   value: stats.total,      color: '#fff' },
-            { label: 'Waiting', value: stats.waiting,    color: '#FCD34D' },
-            { label: 'Active',  value: stats.inProgress, color: '#93C5FD' },
-            { label: 'Ready',   value: stats.ready,      color: '#6EE7B7' },
+            { label: 'Waiting', value: stats.waiting,    color: '#fff' },
+            { label: 'Active',  value: stats.inProgress, color: '#fff' },
+            { label: 'Ready',   value: stats.ready,      color: '#fff' },
           ].map(s => (
-            <div key={s.label} style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 4px', textAlign: 'center' }}>
-              <div style={{ color: s.color, fontWeight: 700, fontSize: 20 }}>{s.value}</div>
-              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, marginTop: 1 }}>{s.label}</div>
+            <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 4px', textAlign: 'center' }}>
+              <div style={{ color: s.color, fontWeight: 600, fontSize: 20 }}>{s.value}</div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginTop: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -222,15 +244,15 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
             const count  = t === 'All' ? jobs.length : jobs.filter(j => j.status === t).length
             const active = filter === t
             return (
-              <button key={t} onClick={() => setFilter(t)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 99, border: '1.5px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: active ? '#185FA5' : '#fff', color: active ? '#fff' : '#64748B', borderColor: active ? '#185FA5' : '#E2E8F0', boxShadow: active ? '0 2px 8px rgba(24,95,165,0.25)' : 'none' }}>
-                {t !== 'All' && STATUS[t] && <span style={{ width: 6, height: 6, borderRadius: '50%', background: active ? '#fff' : STATUS[t].dot }} />}
-                {t} {count > 0 && <span style={{ background: active ? 'rgba(255,255,255,0.25)' : '#F1F5F9', color: active ? '#fff' : '#64748B', padding: '0 5px', borderRadius: 99, fontSize: 10 }}>{count}</span>}
+              <button key={t} onClick={() => setFilter(t)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 99, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: active ? '#fff' : 'rgba(255,255,255,0.03)', color: active ? '#050505' : 'rgba(255,255,255,0.5)', borderColor: active ? '#fff' : 'rgba(255,255,255,0.1)', boxShadow: active ? '0 4px 12px rgba(255,255,255,0.15)' : 'none' }}>
+                {t !== 'All' && STATUS[t] && <span style={{ width: 6, height: 6, borderRadius: '50%', background: active ? '#050505' : STATUS[t].dot }} />}
+                {t} {count > 0 && <span style={{ background: active ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)', color: active ? '#050505' : 'rgba(255,255,255,0.6)', padding: '0 5px', borderRadius: 99, fontSize: 10 }}>{count}</span>}
               </button>
             )
           })}
         </div>
 
-        {loading && <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}><img src={jwLogo} alt="Loading" style={{ width: 36, height: 36, marginBottom: 12, animation: 'spin 1.2s linear infinite', filter: 'invert(1) opacity(0.3)' }} /><div style={{ fontSize: 14, fontWeight: 600 }}>Loading jobs...</div></div>}
+        {loading && <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.5)' }}><img src={jwLogo} alt="Loading" style={{ width: 36, height: 36, marginBottom: 12, animation: 'spin 1.2s linear infinite', opacity: 0.5 }} /><div style={{ fontSize: 14, fontWeight: 600 }}>Loading jobs...</div></div>}
         {error && !loading && (
           <div style={{ background: '#FFF5F5', border: '1px solid #FECACA', borderRadius: 12, padding: 16, textAlign: 'center', color: '#DC2626', marginBottom: 12 }}>
             <div style={{ fontSize: 24, marginBottom: 8 }}>⚠️</div>
@@ -239,9 +261,9 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
           </div>
         )}
         {!loading && !error && filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>
+          <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.4)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>No jobs here</div>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: '#fff' }}>No jobs here</div>
             <div style={{ fontSize: 13 }}>Try a different filter or add a new job</div>
           </div>
         )}
@@ -266,59 +288,59 @@ function JobRow({ job, onEdit, onBill, onDelete, onStatusChange }) {
   }
 
   return (
-    <div style={{ background: '#fff', borderRadius: 14, marginBottom: 10, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', border: '1px solid #F1F5F9' }}>
+    <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 14, marginBottom: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
       <div onClick={() => setExpanded(!expanded)} style={{ padding: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
           {job.vehicleType === '2W' ? '🏍️' : '🚗'}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#0F172A', marginBottom: 2 }}>{job.customerName}</div>
-          <div style={{ fontSize: 12, color: '#64748B', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#334155' }}>{job.regNumber}</span>
-            <span style={{ color: '#CBD5E1' }}>·</span>
+          <div style={{ fontWeight: 600, fontSize: 15, color: '#fff', marginBottom: 2 }}>{job.customerName}</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#fff' }}>{job.regNumber}</span>
+            <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
             <span>{job.makeModel}</span>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <span style={{ background: sc.bg, color: sc.color, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ background: sc.bg, color: sc.color, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot }} />{job.status}
           </span>
-          <span style={{ fontSize: 10, color: '#94A3B8', fontFamily: 'monospace' }}>{job.id}</span>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{job.id}</span>
         </div>
       </div>
 
       {!expanded && (
-        <div style={{ padding: '0 14px 12px', fontSize: 12, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ padding: '0 14px 12px', fontSize: 12, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           💬 {job.complaint}
         </div>
       )}
 
       {expanded && (
-        <div style={{ borderTop: '1px solid #F1F5F9' }}>
-          <div style={{ margin: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: '10px 12px', fontSize: 13, color: '#334155', lineHeight: 1.5 }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ margin: '12px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>
             💬 {job.complaint}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '0 14px 12px', background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '0 14px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
             {[
               { icon: '🔧', label: 'Mechanic', value: job.mechanic || '—' },
               { icon: '📍', label: 'Odometer', value: `${job.odometer} km` },
               { icon: '🕐', label: 'Delivery',  value: job.deliveryTime || '—' },
               { icon: '⛽', label: 'Fuel',      value: job.fuel || '—' },
             ].map((d, i) => (
-              <div key={d.label} style={{ padding: '10px 12px', borderRight: i % 2 === 0 ? '1px solid #E2E8F0' : 'none', borderBottom: i < 2 ? '1px solid #E2E8F0' : 'none' }}>
-                <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{d.icon} {d.label}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>{d.value}</div>
+              <div key={d.label} style={{ padding: '10px 12px', borderRight: i % 2 === 0 ? '1px solid rgba(255,255,255,0.08)' : 'none', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.08)' : 'none' }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{d.icon} {d.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{d.value}</div>
               </div>
             ))}
           </div>
 
           {job.photos && job.photos.length > 0 && (
             <div style={{ padding: '0 14px 12px' }}>
-              <div style={{ fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>📸 Vehicle photos ({job.photos.length})</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>📸 Vehicle photos ({job.photos.length})</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
                 {job.photos.map(photo => (
-                  <div key={photo.id} style={{ aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
+                  <div key={photo.id} style={{ aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <img src={photo.url} alt="Vehicle" onClick={() => setViewing(photo)} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} />
                   </div>
                 ))}
@@ -327,13 +349,13 @@ function JobRow({ job, onEdit, onBill, onDelete, onStatusChange }) {
           )}
 
           <div style={{ padding: '0 14px 12px' }}>
-            <div style={{ fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Update status</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Update status</div>
             <div style={{ display: 'flex', gap: 6 }}>
               {statuses.map(s => {
                 const active = job.status === s
                 const c = STATUS[s]
                 return (
-                  <button key={s} onClick={() => onStatusChange(job.id, s)} style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: `1.5px solid ${active ? c.dot : '#E2E8F0'}`, fontSize: 10, fontWeight: 700, cursor: 'pointer', background: active ? c.bg : '#fff', color: active ? c.color : '#94A3B8' }}>
+                  <button key={s} onClick={() => onStatusChange(job.id, s)} style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: `1px solid ${active ? c.dot : 'rgba(255,255,255,0.1)'}`, fontSize: 10, fontWeight: 600, cursor: 'pointer', background: active ? c.bg : 'rgba(255,255,255,0.03)', color: active ? c.color : 'rgba(255,255,255,0.5)' }}>
                     {s === 'In Progress' ? 'Active' : s}
                   </button>
                 )
@@ -343,10 +365,10 @@ function JobRow({ job, onEdit, onBill, onDelete, onStatusChange }) {
 
           {/* 4 action buttons */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, padding: '0 14px 14px' }}>
-  <button onClick={() => onEdit(job)} style={{ height: 40, borderRadius: 10, border: '1.5px solid #E2E8F0', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#334155' }}>✏️ Edit</button>
-  <button onClick={() => onBill(job)} style={{ height: 40, borderRadius: 10, border: '1.5px solid #C7D2FE', background: '#EEF2FF', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#4338CA' }}>🧾 Bill</button>
-  <button onClick={handleWhatsApp}    style={{ height: 40, borderRadius: 10, border: '1.5px solid #86EFAC', background: '#F0FDF4', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#15803D' }}>💬 WA</button>
-  <button onClick={() => onDelete(job.id)} style={{ height: 40, borderRadius: 10, border: '1.5px solid #FECACA', background: '#FFF5F5', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#DC2626' }}>🗑️ Del</button>
+  <button onClick={() => onEdit(job)} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.03)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#fff' }}>✏️ Edit</button>
+  <button onClick={() => onBill(job)} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.1)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#818CF8' }}>🧾 Bill</button>
+  <button onClick={handleWhatsApp}    style={{ height: 40, borderRadius: 10, border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.1)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#4ADE80' }}>💬 WA</button>
+  <button onClick={() => onDelete(job.id)} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.1)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#F87171' }}>🗑️ Del</button>
 </div>
         </div>
       )}
@@ -400,14 +422,14 @@ function handlePrint() {
 }
 
   return (
-    <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#F0F4F8' }}>
+    <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#050505' }}>
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)', padding: '16px 5% 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={onBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+      <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '16px 5% 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button onClick={onBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>🧾 Create Bill</div>
-          <div style={{ color: '#C7D2FE', fontSize: 12 }}>{job.id} · {job.regNumber}</div>
+          <div style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>🧾 Create Bill</div>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{job.id} · {job.regNumber}</div>
         </div>
       </div>
 
@@ -425,8 +447,8 @@ function handlePrint() {
               { label: 'Odometer',  value: `${job.odometer} km` },
             ].map(d => (
               <div key={d.label}>
-                <div style={{ fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>{d.label}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>{d.value}</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>{d.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{d.value}</div>
               </div>
             ))}
           </div>
@@ -435,13 +457,13 @@ function handlePrint() {
         {/* Line items */}
         <Card title="🔩 Labour & Parts">
           {items.map((item, idx) => (
-            <div key={item.id} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: '10px 12px' }}>
+            <div key={item.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: item.type === 'labour' ? '#EFF6FF' : '#F0FDF4', color: item.type === 'labour' ? '#1D4ED8' : '#15803D' }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
                   {item.type === 'labour' ? '🔧 Labour' : '🔩 Parts'}
                 </span>
                 {items.length > 1 && (
-                  <button onClick={() => removeItem(item.id)} style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>×</button>
+                  <button onClick={() => removeItem(item.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>×</button>
                 )}
               </div>
               <input
@@ -459,7 +481,7 @@ function handlePrint() {
                 </Field>
               </div>
               {item.qty && item.rate && (
-                <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: '#334155', textAlign: 'right' }}>
+                <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: '#fff', textAlign: 'right' }}>
                   = ₹{((parseFloat(item.qty)||0) * (parseFloat(item.rate)||0)).toLocaleString('en-IN')}
                 </div>
               )}
@@ -468,10 +490,10 @@ function handlePrint() {
 
           {/* Add item buttons */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <button onClick={() => addItem('labour')} style={{ height: 40, borderRadius: 10, border: '2px dashed #BFDBFE', background: '#EFF6FF', color: '#1D4ED8', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={() => addItem('labour')} style={{ height: 40, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               + Labour
             </button>
-            <button onClick={() => addItem('parts')} style={{ height: 40, borderRadius: 10, border: '2px dashed #BBF7D0', background: '#F0FDF4', color: '#15803D', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={() => addItem('parts')} style={{ height: 40, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               + Parts
             </button>
           </div>
@@ -479,23 +501,23 @@ function handlePrint() {
 
         {/* Totals */}
         <Card title="💰 Amount">
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', paddingBottom: 8, borderBottom: '1px solid #F1F5F9' }}>
-            <span>🔧 Labour</span><span style={{ fontWeight: 600 }}>₹{labourAmt.toLocaleString('en-IN')}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.6)', paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <span>🔧 Labour</span><span style={{ fontWeight: 600, color: '#fff' }}>₹{labourAmt.toLocaleString('en-IN')}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', paddingBottom: 8, borderBottom: '1px solid #F1F5F9' }}>
-            <span>🔩 Parts</span><span style={{ fontWeight: 600 }}>₹{partsAmt.toLocaleString('en-IN')}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.6)', paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <span>🔩 Parts</span><span style={{ fontWeight: 600, color: '#fff' }}>₹{partsAmt.toLocaleString('en-IN')}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', paddingBottom: 8, borderBottom: '1px solid #F1F5F9' }}>
-            <span>Subtotal</span><span style={{ fontWeight: 600 }}>₹{subtotal.toLocaleString('en-IN')}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.6)', paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <span>Subtotal</span><span style={{ fontWeight: 600, color: '#fff' }}>₹{subtotal.toLocaleString('en-IN')}</span>
           </div>
 
           <Field label="Discount (₹)">
             <input placeholder="0" value={discount} onChange={e => setDiscount(e.target.value)} inputMode="numeric" />
           </Field>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#EEF2FF', borderRadius: 10, padding: '12px 14px' }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#4338CA' }}>Total</span>
-            <span style={{ fontSize: 22, fontWeight: 800, color: '#4338CA' }}>₹{total.toLocaleString('en-IN')}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px 14px', marginTop: 12 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Total</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>₹{total.toLocaleString('en-IN')}</span>
           </div>
         </Card>
 
@@ -504,21 +526,21 @@ function handlePrint() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               onClick={() => setPaid(!paid)}
-              style={{ width: 28, height: 28, borderRadius: 8, border: `2px solid ${paid ? '#22C55E' : '#E2E8F0'}`, background: paid ? '#22C55E' : '#fff', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+              style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${paid ? '#fff' : 'rgba(255,255,255,0.2)'}`, background: paid ? '#fff' : 'transparent', color: paid ? '#050505' : 'transparent', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
             >
               {paid ? '✓' : ''}
             </button>
-            <span style={{ fontSize: 14, fontWeight: 600, color: paid ? '#15803D' : '#64748B' }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: paid ? '#fff' : 'rgba(255,255,255,0.5)' }}>
               {paid ? 'Payment received' : 'Mark as paid'}
             </span>
           </div>
 
           {paid && (
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Payment mode</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>Payment mode</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {['Cash', 'UPI', 'Card'].map(m => (
-                  <button key={m} onClick={() => setPayMode(m)} style={{ flex: 1, height: 38, borderRadius: 10, border: `2px solid ${payMode === m ? '#22C55E' : '#E2E8F0'}`, background: payMode === m ? '#F0FDF4' : '#fff', color: payMode === m ? '#15803D' : '#64748B', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  <button key={m} onClick={() => setPayMode(m)} style={{ flex: 1, height: 38, borderRadius: 10, border: `1px solid ${payMode === m ? '#fff' : 'rgba(255,255,255,0.1)'}`, background: payMode === m ? '#fff' : 'rgba(255,255,255,0.03)', color: payMode === m ? '#050505' : 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                     {m === 'Cash' ? '💵' : m === 'UPI' ? '📱' : '💳'} {m}
                   </button>
                 ))}
@@ -532,13 +554,13 @@ function handlePrint() {
         </Card>
 
         {/* Actions */}
-        <button onClick={handleWhatsApp} style={{ width: '100%', height: 52, background: 'linear-gradient(135deg, #15803D, #16A34A)', color: '#fff', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer', marginBottom: 10, boxShadow: '0 4px 14px rgba(21,128,61,0.3)' }}>
+        <button onClick={handleWhatsApp} style={{ width: '100%', height: 52, background: '#fff', color: '#050505', border: 'none', borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 12, boxShadow: '0 8px 24px rgba(255,255,255,0.15)' }}>
           💬 Send Bill on WhatsApp
         </button>
-        <button onClick={handlePrint} style={{ width: '100%', height: 48, background: 'linear-gradient(135deg, #4338CA, #6366F1)', color: '#fff', border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 10, boxShadow: '0 4px 14px rgba(67,56,202,0.3)' }}>
+        <button onClick={handlePrint} style={{ width: '100%', height: 48, background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 12 }}>
           🖨️ Print Bill
         </button>
-        <button onClick={onBack} style={{ width: '100%', height: 44, background: 'transparent', color: '#64748B', border: '1.5px solid #E2E8F0', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+        <button onClick={onBack} style={{ width: '100%', height: 44, background: 'transparent', color: 'rgba(255,255,255,0.6)', border: 'none', borderRadius: 100, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
           ← Back
         </button>
       </div>
@@ -565,12 +587,12 @@ function JobCardForm({ initialData, onSave, onBack }) {
   }
 
   return (
-    <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#F0F4F8' }}>
-      <div style={{ background: 'linear-gradient(135deg, #185FA5 0%, #1E40AF 100%)', padding: '16px 5% 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={onBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+    <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#050505' }}>
+      <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '16px 5% 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button onClick={onBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
         <div>
-          <div style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>{initialData ? 'Edit Job Card' : 'New Job Card'}</div>
-          <div style={{ color: '#93C5FD', fontSize: 12 }}>{initialData?.id || 'Fill in the details below'}</div>
+          <div style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>{initialData ? 'Edit Job Card' : 'New Job Card'}</div>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{initialData?.id || 'Fill in the details below'}</div>
         </div>
       </div>
 
@@ -584,12 +606,12 @@ function JobCardForm({ initialData, onSave, onBack }) {
         <Card title="🚗 Vehicle Details">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {[['4W','🚗 4-Wheeler'],['2W','🏍️ 2-Wheeler']].map(([val, label]) => (
-              <button key={val} onClick={() => setVehicleType(val)} style={{ height: 44, borderRadius: 10, border: `2px solid ${vehicleType === val ? '#185FA5' : '#E2E8F0'}`, fontSize: 13, fontWeight: 600, cursor: 'pointer', background: vehicleType === val ? '#EFF6FF' : '#fff', color: vehicleType === val ? '#185FA5' : '#64748B' }}>
+              <button key={val} onClick={() => setVehicleType(val)} style={{ height: 44, borderRadius: 10, border: `1px solid ${vehicleType === val ? '#fff' : 'rgba(255,255,255,0.1)'}`, fontSize: 13, fontWeight: 600, cursor: 'pointer', background: vehicleType === val ? '#fff' : 'rgba(255,255,255,0.03)', color: vehicleType === val ? '#050505' : 'rgba(255,255,255,0.5)' }}>
                 {label}
               </button>
             ))}
           </div>
-          <Field label="Registration Number *"><input placeholder="KL 05 AH 7823" value={form.regNumber} onChange={e => handleChange('regNumber', e.target.value.toUpperCase())} style={{ fontFamily: 'monospace', letterSpacing: '0.08em', fontWeight: 600 }} /></Field>
+          <Field label="Registration Number *"><input placeholder="KL 05 AH 7823" value={form.regNumber} onChange={e => handleChange('regNumber', e.target.value.toUpperCase())} style={{ fontFamily: 'monospace', letterSpacing: '0.08em', fontWeight: 600, textTransform: 'uppercase' }} /></Field>
           <Field label="Make & Model *"><input placeholder="Maruti Swift Dzire" value={form.makeModel} onChange={e => handleChange('makeModel', e.target.value)} /></Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <Field label="Year"><input placeholder="2019" value={form.year} onChange={e => handleChange('year', e.target.value)} inputMode="numeric" /></Field>
@@ -611,7 +633,7 @@ function JobCardForm({ initialData, onSave, onBack }) {
               {['Waiting','In Progress','Ready','Delivered'].map(s => {
                 const active = form.status === s; const c = STATUS[s]
                 return (
-                  <button key={s} onClick={() => handleChange('status', s)} style={{ padding: '8px 4px', borderRadius: 10, border: `2px solid ${active ? c.dot : '#E2E8F0'}`, fontSize: 11, fontWeight: 700, cursor: 'pointer', background: active ? c.bg : '#fff', color: active ? c.color : '#94A3B8', lineHeight: 1.3 }}>
+                  <button key={s} onClick={() => handleChange('status', s)} style={{ padding: '8px 4px', borderRadius: 10, border: `1px solid ${active ? c.dot : 'rgba(255,255,255,0.1)'}`, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: active ? c.bg : 'rgba(255,255,255,0.03)', color: active ? c.color : 'rgba(255,255,255,0.5)', lineHeight: 1.3 }}>
                     {s === 'In Progress' ? 'In\nProgress' : s}
                   </button>
                 )
@@ -624,10 +646,10 @@ function JobCardForm({ initialData, onSave, onBack }) {
           <ImageUploader photos={form.photos || []} onChange={photos => handleChange('photos', photos)} />
         </Card>
 
-        <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: 52, background: saving ? '#94A3B8' : 'linear-gradient(135deg, #185FA5, #1E40AF)', color: '#fff', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 14px rgba(24,95,165,0.35)', marginBottom: 10 }}>
+        <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: 52, background: saving ? 'rgba(255,255,255,0.1)' : '#fff', color: saving ? 'rgba(255,255,255,0.5)' : '#050505', border: 'none', borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: saving ? 'none' : '0 8px 24px rgba(255,255,255,0.15)', marginBottom: 12 }}>
           {saving ? <><img src={jwLogo} alt="" style={{ width: 20, height: 20, marginRight: 8, animation: 'spin 1.2s linear infinite', objectFit: 'contain' }} /> Saving...</> : `💾 ${initialData ? 'Update Job Card' : 'Save Job Card'}`}
         </button>
-        <button onClick={onBack} style={{ width: '100%', height: 44, background: 'transparent', color: '#64748B', border: '1.5px solid #E2E8F0', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+        <button onClick={onBack} style={{ width: '100%', height: 44, background: 'transparent', color: 'rgba(255,255,255,0.6)', border: 'none', borderRadius: 100, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
       </div>
     </div>
   )
@@ -652,17 +674,17 @@ function ImageUploader({ photos, onChange }) {
       {photos.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 8 }}>
           {photos.map(photo => (
-            <div key={photo.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 10, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
+            <div key={photo.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)' }}>
               <img src={photo.url} alt="Vehicle" onClick={() => setViewing(photo)} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} />
               <button onClick={() => onChange(photos.filter(p => p.id !== photo.id))} style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
             </div>
           ))}
         </div>
       )}
-      <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, height: 80, borderRadius: 12, border: '2px dashed #CBD5E1', background: '#F8FAFC', cursor: 'pointer', color: '#64748B' }}>
+      <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, height: 80, borderRadius: 12, border: '1px dashed rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.02)', cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}>
         <span style={{ fontSize: 24 }}>📷</span>
         <span style={{ fontSize: 13, fontWeight: 600 }}>Add photos</span>
-        <span style={{ fontSize: 11, color: '#94A3B8' }}>Camera or gallery · tap to upload</span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Camera or gallery · tap to upload</span>
         <input type="file" accept="image/*" multiple capture="environment" onChange={handleFiles} style={{ display: 'none' }} />
       </label>
       {photos.length > 0 && <div style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center' }}>{photos.length} photo{photos.length > 1 ? 's' : ''} · tap to view</div>}
@@ -685,17 +707,17 @@ function PhotoViewer({ photo, onClose }) {
 // ── REUSABLE ─────────────────────────────────────────────────
 function Card({ title, children }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #F1F5F9', marginBottom: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-      <div style={{ padding: '11px 14px', borderBottom: '1px solid #F1F5F9', fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{title}</div>
-      <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 }}>{children}</div>
+    <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', marginBottom: 16, overflow: 'hidden' }}>
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{title}</div>
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 16 }}>{children}</div>
     </div>
   )
 }
 
 function Field({ label, children }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>{label}</label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.5)' }}>{label}</label>
       {children}
     </div>
   )
