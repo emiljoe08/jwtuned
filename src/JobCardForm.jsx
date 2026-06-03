@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import jwLogo from './assets/jjw.svg'
 import { STATUS, PhotoViewer, Card, Field } from './shared'
 
@@ -14,11 +14,42 @@ const emptyForm = {
  * @returns {JSX.Element} The job card form component.
  */
 export default function JobCardForm({ initialData, onSave, onBack, mechanics, isManager }) {
-  const [vehicleType, setVehicleType] = useState(initialData?.vehicleType || '4W')
-  const [form, setForm]               = useState(initialData ? { ...initialData } : { ...emptyForm })
+  const draftId = initialData ? `edit_${initialData.id}` : 'new'
+
+  const [vehicleType, setVehicleType] = useState(() => {
+    const saved = localStorage.getItem(`jw_draft_veh_${draftId}`)
+    if (saved) return saved
+    return initialData?.vehicleType || '4W'
+  })
+
+  const [form, setForm] = useState(() => {
+    const saved = localStorage.getItem(`jw_draft_form_${draftId}`)
+    if (saved) {
+      try { return JSON.parse(saved) } catch (e) { console.error('Failed to parse draft', e) }
+    }
+    return initialData ? { ...initialData } : { ...emptyForm }
+  })
+
   const [saving, setSaving]           = useState(false)
   const [addingMechanic, setAddingMechanic] = useState(false)
   const [newMechanicName, setNewMechanicName] = useState('')
+  const [showExitWarning, setShowExitWarning] = useState(false)
+
+  // Warn before refreshing the page to prevent data loss
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [])
+
+  // Auto-save draft on every change
+  useEffect(() => {
+    localStorage.setItem(`jw_draft_veh_${draftId}`, vehicleType)
+    localStorage.setItem(`jw_draft_form_${draftId}`, JSON.stringify(form))
+  }, [form, vehicleType, draftId])
 
   /** Updates a specific field in the job card form data. */
   function handleChange(field, value) { setForm(p => ({ ...p, [field]: value })) }
@@ -31,13 +62,18 @@ export default function JobCardForm({ initialData, onSave, onBack, mechanics, is
     }
     setSaving(true)
     await onSave(form, vehicleType)
+    localStorage.removeItem(`jw_draft_veh_${draftId}`)
+    localStorage.removeItem(`jw_draft_form_${draftId}`)
     setSaving(false)
   }
+
+  function handleBack() { setShowExitWarning(true) }
+  function confirmBack() { setShowExitWarning(false); onBack(); }
 
   return (
     <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#050505' }}>
       <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '16px 5% 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={onBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+        <button onClick={handleBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
         <div>
           <div style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>{initialData ? 'Edit Job Card' : 'New Job Card'}</div>
           <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{initialData?.id || 'Fill in the details below'}</div>
@@ -128,8 +164,24 @@ export default function JobCardForm({ initialData, onSave, onBack, mechanics, is
         <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: 52, background: saving ? 'rgba(255,255,255,0.1)' : '#fff', color: saving ? 'rgba(255,255,255,0.5)' : '#050505', border: 'none', borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: saving ? 'none' : '0 8px 24px rgba(255,255,255,0.15)', marginBottom: 12 }}>
           {saving ? <><img src={jwLogo} alt="" style={{ width: 20, height: 20, marginRight: 8, animation: 'spin 1.2s linear infinite', objectFit: 'contain' }} /> Saving...</> : `💾 ${initialData ? 'Update Job Card' : 'Save Job Card'}`}
         </button>
-        <button onClick={onBack} style={{ width: '100%', height: 44, background: 'transparent', color: 'rgba(255,255,255,0.6)', border: 'none', borderRadius: 100, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+        <button onClick={handleBack} style={{ width: '100%', height: 44, background: 'transparent', color: 'rgba(255,255,255,0.6)', border: 'none', borderRadius: 100, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
       </div>
+
+      {showExitWarning && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Leave this page?</h3>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              Your progress has been saved as a draft. Are you sure you want to go back?
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <button onClick={() => setShowExitWarning(false)} style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', cursor: 'pointer', fontWeight: 600, fontFamily: 'inherit' }}>Stay</button>
+              <button onClick={confirmBack} style={{ padding: '12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#F87171', cursor: 'pointer', fontWeight: 600, fontFamily: 'inherit' }}>Leave</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

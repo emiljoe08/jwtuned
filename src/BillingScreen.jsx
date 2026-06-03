@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { printBill, downloadBill } from './PrintBill'
 import { Card, Field } from './shared'
 
@@ -10,14 +10,41 @@ const emptyLineItem = () => ({ id: Date.now(), description: '', qty: '1', rate: 
  * @returns {JSX.Element} The billing screen component.
  */
 export default function BillingScreen({ job, onBack }) {
-  const [items, setItems]         = useState([
-    { id: 1, description: 'Labour charges', qty: '1', rate: '', type: 'labour' },
+  const draftId = job?.id || 'unknown'
+
+  const getDraft = () => {
+    const saved = localStorage.getItem(`jw_draft_bill_${draftId}`)
+    if (saved) {
+      try { return JSON.parse(saved) } catch (e) { console.error('Failed to parse bill draft', e) }
+    }
+    return {}
+  }
+
+  const [items, setItems]         = useState(() => getDraft().items ?? [
+    { id: 1, description: 'Labour charges', qty: '1', rate: '', type: 'labour' }
   ])
-  const [discount, setDiscount]   = useState('')
-  const [paid, setPaid]           = useState(false)
-  const [payMode, setPayMode]     = useState('Cash')
-  const [note, setNote]           = useState('')
+  const [discount, setDiscount]   = useState(() => getDraft().discount ?? '')
+  const [paid, setPaid]           = useState(() => getDraft().paid ?? false)
+  const [payMode, setPayMode]     = useState(() => getDraft().payMode ?? 'Cash')
+  const [note, setNote]           = useState(() => getDraft().note ?? '')
   const [printed, setPrinted]     = useState(false)
+  const [showExitWarning, setShowExitWarning] = useState(false)
+
+  // Warn before refreshing the page to prevent data loss
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [])
+
+  // Auto-save draft on every change
+  useEffect(() => {
+    const draftData = { items, discount, paid, payMode, note }
+    localStorage.setItem(`jw_draft_bill_${draftId}`, JSON.stringify(draftData))
+  }, [items, discount, paid, payMode, note, draftId])
 
   /**
    * Adds a new empty line item to the bill.
@@ -68,12 +95,15 @@ export default function BillingScreen({ job, onBack }) {
     downloadBill({ job, items, discount, paid, payMode, note })
   }
 
+  function handleBack() { setShowExitWarning(true) }
+  function confirmBack() { setShowExitWarning(false); onBack(); }
+
   return (
     <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#050505' }}>
 
       {/* Header */}
       <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '16px 5% 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={onBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+        <button onClick={handleBack} style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>🧾 Create Bill</div>
           <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{job.id} · {job.regNumber}</div>
@@ -212,10 +242,26 @@ export default function BillingScreen({ job, onBack }) {
             📄 Download PDF
           </button>
         </div>
-        <button onClick={onBack} style={{ width: '100%', height: 44, background: 'transparent', color: 'rgba(255,255,255,0.6)', border: 'none', borderRadius: 100, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+        <button onClick={handleBack} style={{ width: '100%', height: 44, background: 'transparent', color: 'rgba(255,255,255,0.6)', border: 'none', borderRadius: 100, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
           ← Back
         </button>
       </div>
+
+      {showExitWarning && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Leave this page?</h3>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              Your progress has been saved as a draft. Are you sure you want to go back?
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <button onClick={() => setShowExitWarning(false)} style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', cursor: 'pointer', fontWeight: 600, fontFamily: 'inherit' }}>Stay</button>
+              <button onClick={confirmBack} style={{ padding: '12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#F87171', cursor: 'pointer', fontWeight: 600, fontFamily: 'inherit' }}>Leave</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

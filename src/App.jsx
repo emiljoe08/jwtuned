@@ -40,11 +40,11 @@ export default function App({ startAtDashboard = false }) {
   const [appState, setAppState] = useState(() => localStorage.getItem('jw_auth_role') ? 'loading' : (startAtDashboard ? 'login' : 'landing'))
 const [loginError, setLoginError]     = useState('')
   const [isManager, setIsManager]       = useState(() => localStorage.getItem('jw_auth_role') === 'manager')
-const [screen, setScreen]             = useState('list')
+  const [screen, setScreen]             = useState(() => localStorage.getItem('jw_screen') || 'list')
 const [jobs, setJobs]                 = useState([])
 const [mechanics, setMechanics]       = useState([])     // ← add this
-const [editingJob, setEditingJob]     = useState(null)
-const [billingJob, setBillingJob]     = useState(null)
+  const [editingJobId, setEditingJobId] = useState(() => localStorage.getItem('jw_edit_id') || null)
+  const [billingJobId, setBillingJobId] = useState(() => localStorage.getItem('jw_bill_id') || null)
 const [loading, setLoading]           = useState(true)
 const [error, setError]               = useState(null)
 
@@ -54,6 +54,21 @@ const [error, setError]               = useState(null)
       Notification.requestPermission()
     }
   }, [])
+
+  // Persist current screen and active jobs to local storage
+  useEffect(() => {
+    localStorage.setItem('jw_screen', screen)
+  }, [screen])
+
+  useEffect(() => {
+    if (editingJobId) localStorage.setItem('jw_edit_id', editingJobId)
+    else localStorage.removeItem('jw_edit_id')
+  }, [editingJobId])
+
+  useEffect(() => {
+    if (billingJobId) localStorage.setItem('jw_bill_id', billingJobId)
+    else localStorage.removeItem('jw_bill_id')
+  }, [billingJobId])
 
  useEffect(() => {
   if (appState === 'app') {
@@ -118,7 +133,7 @@ const [error, setError]               = useState(null)
   /**
    * Opens the form to create a new job card.
    */
-  function openNew()     { setEditingJob(null); setScreen('form') }
+  function openNew()     { setEditingJobId(null); setScreen('form') }
 
   /**
    * Opens the form to edit an existing job card.
@@ -129,14 +144,14 @@ const [error, setError]               = useState(null)
       alert('Delivered jobs cannot be edited by staff.');
       return;
     }
-    setEditingJob(job);  setScreen('form')
+    setEditingJobId(job.id);  setScreen('form')
   }
 
   /**
    * Opens the billing screen for a specific job.
    * @param {Object} job - The job to bill.
    */
-  function openBill(job) { setBillingJob(job);  setScreen('bill') }
+  function openBill(job) { setBillingJobId(job.id);  setScreen('bill') }
 
   /**
    * Saves a new or edited job card to the database and updates local state.
@@ -144,7 +159,7 @@ const [error, setError]               = useState(null)
    * @param {string} vehicleType - The selected vehicle type.
    */
   async function saveJob(form, vehicleType) {
-    const id  = editingJob ? editingJob.id : generateId()
+    const id  = editingJobId ? editingJobId : generateId()
     const row = toDb(form, vehicleType, id)
 
     // Add new mechanic to roster if entered
@@ -153,7 +168,7 @@ const [error, setError]               = useState(null)
       if (newMech) setMechanics(p => [...p, newMech].sort((a, b) => a.name.localeCompare(b.name)))
     }
 
-    if (editingJob) {
+    if (editingJobId) {
       const { error } = await supabase.from('jobs').update(row).eq('id', id)
       if (error) { alert('Error: ' + error.message); return }
       setJobs(p => p.map(j => j.id === id ? fromDb(row) : j))
@@ -162,6 +177,7 @@ const [error, setError]               = useState(null)
       if (error) { alert('Error: ' + error.message); return }
       setJobs(p => [fromDb(row), ...p])
     }
+    setEditingJobId(null)
     setScreen('list')
   }
 
@@ -219,8 +235,24 @@ const [error, setError]               = useState(null)
 if (appState === 'login')   return <LoginScreen onLogin={handleLogin} onBack={() => setAppState('landing')} error={loginError} />
 if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('app')} />
 
-if (screen === 'form')     return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} mechanics={mechanics} isManager={isManager} />
-if (screen === 'bill')     return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
+const editingJob = editingJobId ? jobs.find(j => j.id === editingJobId) : null
+const billingJob = billingJobId ? jobs.find(j => j.id === billingJobId) : null
+
+if (screen === 'form') {
+  if (editingJobId && !editingJob) {
+    if (loading) return <div style={{padding: 40, textAlign: 'center'}}>Loading...</div>
+    else { setScreen('list'); return null; }
+  }
+  return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => { setEditingJobId(null); setScreen('list'); }} mechanics={mechanics} isManager={isManager} />
+}
+if (screen === 'bill') {
+  if (!billingJob) {
+    if (loading) return <div style={{padding: 40, textAlign: 'center'}}>Loading...</div>
+    else { setScreen('list'); return null; }
+  }
+  return <BillingScreen job={billingJob} onBack={() => { setBillingJobId(null); setScreen('list'); }} />
+}
+
 if (screen === 'history')  return <CustomerHistory onBack={() => setScreen('list')} />
 if (screen === 'reports')  return <RevenueReports onBack={() => setScreen('list')} />
 if (screen === 'manager') return (
