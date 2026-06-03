@@ -13,7 +13,7 @@ const emptyForm = {
  * Renders the form to create or edit a job card.
  * @returns {JSX.Element} The job card form component.
  */
-export default function JobCardForm({ initialData, onSave, onBack, mechanics }) {
+export default function JobCardForm({ initialData, onSave, onBack, mechanics, isManager }) {
   const [vehicleType, setVehicleType] = useState(initialData?.vehicleType || '4W')
   const [form, setForm]               = useState(initialData ? { ...initialData } : { ...emptyForm })
   const [saving, setSaving]           = useState(false)
@@ -110,8 +110,9 @@ export default function JobCardForm({ initialData, onSave, onBack, mechanics }) 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginTop: 2 }}>
               {['Waiting','In Progress','Ready','Delivered'].map(s => {
                 const active = form.status === s; const c = STATUS[s]
+                const disabled = s === 'Delivered' && !isManager && !active
                 return (
-                  <button key={s} onClick={() => handleChange('status', s)} style={{ padding: '8px 4px', borderRadius: 10, border: `1px solid ${active ? c.dot : 'rgba(255,255,255,0.1)'}`, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: active ? c.bg : 'rgba(255,255,255,0.03)', color: active ? c.color : 'rgba(255,255,255,0.5)', lineHeight: 1.3 }}>
+                  <button key={s} disabled={disabled} onClick={() => handleChange('status', s)} style={{ padding: '8px 4px', borderRadius: 10, border: `1px solid ${active ? c.dot : 'rgba(255,255,255,0.1)'}`, fontSize: 11, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', background: active ? c.bg : 'rgba(255,255,255,0.03)', color: active ? c.color : 'rgba(255,255,255,0.5)', lineHeight: 1.3, opacity: disabled ? 0.4 : 1 }}>
                     {s === 'In Progress' ? 'In\nProgress' : s}
                   </button>
                 )

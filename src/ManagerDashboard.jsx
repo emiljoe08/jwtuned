@@ -33,15 +33,17 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
         .assign-select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #fff; font-size: 12px; padding: 4px 8px; font-family: inherit; outline: none; width: 100%; margin-top: 8px; cursor: pointer; }
         .assign-select:focus { border-color: #E8310A; }
         .assign-select option { background: #1a1a1a; color: #fff; }
+        .mgr-stats-grid { grid-template-columns: repeat(4, 1fr); }
         @media (max-width: 768px) {
+          .mgr-stats-grid { grid-template-columns: repeat(2, 1fr); }
           .kanban-board { flex-direction: column !important; }
-          .kanban-col { min-width: unset !important; max-width: unset !important; }
+          .kanban-col { min-width: 100% !important; max-width: 100% !important; }
         }
       `}</style>
 
       {/* Header */}
       <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '16px 5%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
           <div>
             <div style={{ color: '#E8310A', fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 4 }}>Manager View</div>
             <div style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>JW Tuned Dashboard</div>
@@ -52,7 +54,7 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
         </div>
 
         {/* Summary stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+        <div className="mgr-stats-grid" style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
           {[
             { label: 'Total Active', value: activeJobs.length, color: '#fff' },
             { label: 'Unassigned', value: unassigned.length, color: unassigned.length > 0 ? '#FCD34D' : '#6EE7B7' },

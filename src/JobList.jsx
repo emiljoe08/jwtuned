@@ -53,7 +53,7 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
     if (fetchError) {
       setError(fetchError.message)
     } else {
-      const mapped = data.map(fromDb)
+      const mapped = (data || []).map(fromDb)
       setServerJobs(prev => isReset ? mapped : [...prev, ...mapped])
       setHasMore(to < (count - 1))
     }
@@ -78,10 +78,10 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
     }
   }
 
-  async function handleLocalDelete(id) {
-    const success = await onDelete(id)
+  async function handleLocalDelete(job) {
+    const success = await onDelete(job)
     if (success) {
-      setServerJobs(p => p.filter(j => j.id !== id))
+      setServerJobs(p => p.filter(j => j.id !== job.id))
       loadStats()
     }
   }
@@ -106,8 +106,17 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
 
   return (
     <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#050505' }}>
+      <style>{`
+        .stats-grid { grid-template-columns: repeat(4, 1fr); }
+        .joblist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 16px; }
+        @media (max-width: 640px) {
+          .stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .joblist-header { flex-direction: column; align-items: flex-start; }
+          .joblist-actions { width: 100%; justify-content: flex-start; }
+        }
+      `}</style>
       <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '20px 5% 24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div className="joblist-header">
           <div>
             <div style={{ color: '#fff', fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
               <img src={jwLogo} alt="Logo" style={{ width: 24, height: 24, objectFit: 'contain' }} />
@@ -115,18 +124,20 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
             </div>
             <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 }}>Garage Management</div>
           </div>
-         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+         <div className="joblist-actions" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
   <button onClick={handleRefresh} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', borderRadius:10, width:36, height:36, fontSize:16, cursor:'pointer' }}>↻</button>
-  {isManager && <>
+  {isManager && (
     <button onClick={onManagerView} style={{ background:'rgba(232,49,10,0.1)', border:'1px solid rgba(232,49,10,0.3)', color:'#E8310A', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📊 Manager</button>
+  )}
+  {isManager && (
     <button onClick={() => onScreen('reports')} style={{ background:'rgba(252,211,77,0.1)', border:'1px solid rgba(252,211,77,0.2)', color:'#FCD34D', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📈 Reports</button>
-  </>}
+  )}
   <button onClick={() => onScreen('history')} style={{ background:'rgba(147,197,253,0.1)', border:'1px solid rgba(147,197,253,0.2)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>🔍 History</button>
   <button onClick={onNew} style={{ background:'#fff', color:'#050505', border:'none', borderRadius:10, padding:'8px 16px', fontWeight:600, fontSize:13, cursor:'pointer' }}>+ New Job</button>
   <button onClick={onLogout} style={{ background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', color:'#F87171', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft: 8 }}>🚪 Logout</button>
 </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+        <div className="stats-grid" style={{ display: 'grid', gap: 8 }}>
           {[
             { label: 'Total',   value: stats.total,      color: '#fff' },
             { label: 'Waiting', value: stats.waiting,    color: '#fff' },
@@ -182,7 +193,7 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
           </div>
         )}
         {serverJobs.map(job => (
-          <JobRow key={job.id} job={job} onEdit={onEdit} onBill={onBill} onDelete={handleLocalDelete} onStatusChange={handleLocalStatusChange} />
+          <JobRow key={job.id} job={job} onEdit={onEdit} onBill={onBill} onDelete={handleLocalDelete} onStatusChange={handleLocalStatusChange} isManager={isManager} />
         ))}
         {!loading && hasMore && (
           <div 
@@ -201,11 +212,12 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
  * Renders an individual job card row in the dashboard list.
  * @returns {JSX.Element} The job row component.
  */
-function JobRow({ job, onEdit, onBill, onDelete, onStatusChange }) {
+function JobRow({ job, onEdit, onBill, onDelete, onStatusChange, isManager }) {
   const [expanded, setExpanded] = useState(false)
   const [viewing, setViewing]   = useState(null)
   const sc       = STATUS[job.status] || STATUS['Waiting']
   const statuses = ['Waiting', 'In Progress', 'Ready', 'Delivered']
+  const isDeliveredAndNotManager = job.status === 'Delivered' && !isManager
 
   return (
     <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 14, marginBottom: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -285,12 +297,13 @@ function JobRow({ job, onEdit, onBill, onDelete, onStatusChange }) {
 
           <div style={{ padding: '0 14px 12px' }}>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Update status</div>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {statuses.map(s => {
                 const active = job.status === s
                 const c = STATUS[s]
+                const disabled = s === 'Delivered' && !isManager && !active
                 return (
-                  <button key={s} onClick={() => onStatusChange(job.id, s)} style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: `1px solid ${active ? c.dot : 'rgba(255,255,255,0.1)'}`, fontSize: 10, fontWeight: 600, cursor: 'pointer', background: active ? c.bg : 'rgba(255,255,255,0.03)', color: active ? c.color : 'rgba(255,255,255,0.5)' }}>
+                  <button key={s} disabled={disabled} onClick={() => onStatusChange(job.id, s)} style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: `1px solid ${active ? c.dot : 'rgba(255,255,255,0.1)'}`, fontSize: 10, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', background: active ? c.bg : 'rgba(255,255,255,0.03)', color: active ? c.color : 'rgba(255,255,255,0.5)', opacity: disabled ? 0.4 : 1 }}>
                     {s === 'In Progress' ? 'Active' : s}
                   </button>
                 )
@@ -300,8 +313,8 @@ function JobRow({ job, onEdit, onBill, onDelete, onStatusChange }) {
 
           {/* 2 action buttons */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 14px 14px' }}>
-  <button onClick={() => onEdit(job)} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.03)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#fff' }}>✏️ Edit</button>
-  <button onClick={() => onDelete(job.id)} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.1)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#F87171' }}>🗑️ Del</button>
+  <button onClick={() => onEdit(job)} disabled={isDeliveredAndNotManager} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.03)', fontSize: 12, fontWeight: 600, cursor: isDeliveredAndNotManager ? 'not-allowed' : 'pointer', color: '#fff', opacity: isDeliveredAndNotManager ? 0.4 : 1 }}>✏️ Edit</button>
+  <button onClick={() => onDelete(job)} disabled={isDeliveredAndNotManager} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.1)', fontSize: 12, fontWeight: 600, cursor: isDeliveredAndNotManager ? 'not-allowed' : 'pointer', color: '#F87171', opacity: isDeliveredAndNotManager ? 0.4 : 1 }}>🗑️ Del</button>
 </div>
         </div>
       )}

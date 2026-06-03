@@ -48,6 +48,13 @@ const [billingJob, setBillingJob]     = useState(null)
 const [loading, setLoading]           = useState(true)
 const [error, setError]               = useState(null)
 
+  useEffect(() => {
+    // Request desktop notification permissions on initial load
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
+
  useEffect(() => {
   if (appState === 'app') {
     async function load() {
@@ -58,14 +65,36 @@ const [error, setError]               = useState(null)
       ])
       if (jobsRes.error) { setError('Could not load jobs.'); console.error(jobsRes.error) }
       else {
-        setJobs(jobsRes.data.map(fromDb))
-        const nums = jobsRes.data.map(r => parseInt(r.id.split('-')[2])).filter(n => !isNaN(n))
+        const fetchedJobs = jobsRes.data || []
+        setJobs(fetchedJobs.map(fromDb))
+        const nums = fetchedJobs.map(r => parseInt(r.id?.split('-')[2])).filter(n => !isNaN(n))
         counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
       }
       if (mechRes.data) setMechanics(mechRes.data)
       setLoading(false)
     }
     load()
+
+    // Subscribe to real-time new jobs
+    const channel = supabase
+      .channel('public:jobs')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'jobs' },
+        (payload) => {
+          const newJob = payload.new
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('New Job Added 🚗', {
+              body: `${newJob.customer_name} added a ${newJob.make_model} (${newJob.reg_number}).`,
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }
 }, [appState])
 
@@ -93,7 +122,13 @@ const [error, setError]               = useState(null)
    * Opens the form to edit an existing job card.
    * @param {Object} job - The job to edit.
    */
-  function openEdit(job) { setEditingJob(job);  setScreen('form') }
+  function openEdit(job) {
+    if (job.status === 'Delivered' && !isManager) {
+      alert('Delivered jobs cannot be edited by staff.');
+      return;
+    }
+    setEditingJob(job);  setScreen('form')
+  }
 
   /**
    * Opens the billing screen for a specific job.
@@ -130,13 +165,17 @@ const [error, setError]               = useState(null)
 
   /**
    * Deletes a job card from the database after user confirmation.
-   * @param {string} id - The ID of the job to delete.
+   * @param {Object} job - The job object to delete.
    */
-  async function deleteJob(id) {
+  async function deleteJob(job) {
+    if (job.status === 'Delivered' && !isManager) {
+      alert('Delivered jobs cannot be deleted by staff.');
+      return false;
+    }
     if (!window.confirm('Delete this job card?')) return false
-    const { error } = await supabase.from('jobs').delete().eq('id', id)
+    const { error } = await supabase.from('jobs').delete().eq('id', job.id)
     if (error) { alert('Error: ' + error.message); return false }
-    setJobs(p => p.filter(j => j.id !== id))
+    setJobs(p => p.filter(j => j.id !== job.id))
     return true
   }
 
@@ -178,7 +217,7 @@ const [error, setError]               = useState(null)
 if (appState === 'login')   return <LoginScreen onLogin={handleLogin} onBack={() => setAppState('landing')} error={loginError} />
 if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('app')} />
 
-if (screen === 'form')     return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} mechanics={mechanics} />
+if (screen === 'form')     return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} mechanics={mechanics} isManager={isManager} />
 if (screen === 'bill')     return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
 if (screen === 'history')  return <CustomerHistory onBack={() => setScreen('list')} />
 if (screen === 'reports')  return <RevenueReports onBack={() => setScreen('list')} />
