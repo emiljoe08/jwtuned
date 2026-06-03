@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react'
+import { Routes, Route, useNavigate, useLocation, Navigate, useParams } from 'react-router-dom'
 import { supabase } from './supabase'
 import LoadingScreen from './LoadingScreen'
 import LandingPage from './LandingPage'
@@ -31,22 +32,36 @@ function generateId() {
   return `JW-${new Date().getFullYear()}-${String(counter++).padStart(4, '0')}`
 }
 
+// ── ROUTE WRAPPERS ───────────────────────────────────────────
+function EditJobWrapper({ jobs, onSave, onBack, mechanics, isManager }) {
+  const { id } = useParams()
+  const job = jobs.find(j => j.id === id)
+  if (!job) return <div style={{ padding: 40, textAlign: 'center' }}>Job not found...</div>
+  return <JobCardForm initialData={job} onSave={(f, v) => onSave(f, v, id)} onBack={onBack} mechanics={mechanics} isManager={isManager} />
+}
+
+function BillJobWrapper({ jobs, onBack }) {
+  const { id } = useParams()
+  const job = jobs.find(j => j.id === id)
+  if (!job) return <div style={{ padding: 40, textAlign: 'center' }}>Job not found...</div>
+  return <BillingScreen job={job} onBack={onBack} />
+}
+
 // ── APP ──────────────────────────────────────────────────────
 /**
- * Main Application component that handles state and routing between landing, login, loading, and dashboard.
+ * Main Application component that handles state and routing.
  * @returns {JSX.Element} The rendered application component.
  */
-export default function App({ startAtDashboard = false }) {
-  const [appState, setAppState] = useState(() => localStorage.getItem('jw_auth_role') ? 'loading' : (startAtDashboard ? 'login' : 'landing'))
-const [loginError, setLoginError]     = useState('')
-  const [isManager, setIsManager]       = useState(() => localStorage.getItem('jw_auth_role') === 'manager')
-  const [screen, setScreen]             = useState(() => localStorage.getItem('jw_screen') || 'list')
-const [jobs, setJobs]                 = useState([])
-const [mechanics, setMechanics]       = useState([])     // ← add this
-  const [editingJobId, setEditingJobId] = useState(() => localStorage.getItem('jw_edit_id') || null)
-  const [billingJobId, setBillingJobId] = useState(() => localStorage.getItem('jw_bill_id') || null)
-const [loading, setLoading]           = useState(true)
-const [error, setError]               = useState(null)
+export default function App() {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const [loginError, setLoginError] = useState('')
+  const [isManager, setIsManager]   = useState(() => localStorage.getItem('jw_auth_role') === 'manager')
+  const [jobs, setJobs]             = useState([])
+  const [mechanics, setMechanics]   = useState([])
+  const [dataLoaded, setDataLoaded] = useState(false)
+  const [error, setError]           = useState(null)
 
   useEffect(() => {
     // Request desktop notification permissions on initial load
@@ -55,41 +70,37 @@ const [error, setError]               = useState(null)
     }
   }, [])
 
-  // Persist current screen and active jobs to local storage
   useEffect(() => {
-    localStorage.setItem('jw_screen', screen)
-  }, [screen])
+    const role = localStorage.getItem('jw_auth_role')
+    const publicPaths = ['/', '/login', '/loading']
 
-  useEffect(() => {
-    if (editingJobId) localStorage.setItem('jw_edit_id', editingJobId)
-    else localStorage.removeItem('jw_edit_id')
-  }, [editingJobId])
-
-  useEffect(() => {
-    if (billingJobId) localStorage.setItem('jw_bill_id', billingJobId)
-    else localStorage.removeItem('jw_bill_id')
-  }, [billingJobId])
-
- useEffect(() => {
-  if (appState === 'app') {
-    async function load() {
-      setLoading(true); setError(null)
-      const [jobsRes, mechRes] = await Promise.all([
-        supabase.from('jobs').select('*').order('created_at', { ascending: false }),
-        supabase.from('mechanics').select('*').order('name')
-      ])
-      if (jobsRes.error) { setError('Could not load jobs.'); console.error(jobsRes.error) }
-      else {
-        const fetchedJobs = jobsRes.data || []
-        setJobs(fetchedJobs.map(fromDb))
-        const nums = fetchedJobs.map(r => parseInt(r.id?.split('-')[2])).filter(n => !isNaN(n))
-        counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
-      }
-      if (mechRes.data) setMechanics(mechRes.data)
-      setLoading(false)
+    // Redirect unauthenticated users or users with unloaded data to appropriate initial setup
+    if (!role && !publicPaths.includes(location.pathname)) {
+      navigate('/login', { replace: true })
+    } else if (role && !dataLoaded && !publicPaths.includes(location.pathname)) {
+      navigate('/loading', { replace: true, state: { redirectTo: location.pathname } })
     }
-    load()
+  }, [dataLoaded, location.pathname, navigate])
 
+  async function loadData() {
+    setError(null)
+    const [jobsRes, mechRes] = await Promise.all([
+      supabase.from('jobs').select('*').order('created_at', { ascending: false }),
+      supabase.from('mechanics').select('*').order('name')
+    ])
+    if (jobsRes.error) { setError('Could not load jobs.'); console.error(jobsRes.error) }
+    else {
+      const fetchedJobs = jobsRes.data || []
+      setJobs(fetchedJobs.map(fromDb))
+      const nums = fetchedJobs.map(r => parseInt(r.id?.split('-')[2])).filter(n => !isNaN(n))
+      counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
+    }
+    if (mechRes.data) setMechanics(mechRes.data)
+    setDataLoaded(true)
+  }
+
+  useEffect(() => {
+    if (!dataLoaded) return
     // Subscribe to real-time new jobs
     const channel = supabase
       .channel('public:jobs')
@@ -110,8 +121,7 @@ const [error, setError]               = useState(null)
     return () => {
       supabase.removeChannel(channel)
     }
-  }
-}, [appState])
+  }, [dataLoaded])
 
   // ── ALL FUNCTIONS DEFINED HERE FIRST ──
   /**
@@ -121,45 +131,29 @@ const [error, setError]               = useState(null)
   function handleLogin(password) {
   if (password === 'jwtuned2024') {
     localStorage.setItem('jw_auth_role', 'staff')
-    setLoginError(''); setIsManager(false); setAppState('loading')
+      setLoginError(''); setIsManager(false); navigate('/loading')
   } else if (password === 'jwmanager2024') {
     localStorage.setItem('jw_auth_role', 'manager')
-    setLoginError(''); setIsManager(true); setAppState('loading')
+      setLoginError(''); setIsManager(true); navigate('/loading')
   } else {
     setLoginError('Wrong password. Try again.')
   }
 }
 
-  /**
-   * Opens the form to create a new job card.
-   */
-  function openNew()     { setEditingJobId(null); setScreen('form') }
-
-  /**
-   * Opens the form to edit an existing job card.
-   * @param {Object} job - The job to edit.
-   */
-  function openEdit(job) {
-    if (job.status === 'Delivered' && !isManager) {
-      alert('Delivered jobs cannot be edited by staff.');
-      return;
-    }
-    setEditingJobId(job.id);  setScreen('form')
+  function handleLogout() {
+    localStorage.removeItem('jw_auth_role')
+    setIsManager(false)
+    setDataLoaded(false)
+    navigate('/login', { replace: true })
   }
-
-  /**
-   * Opens the billing screen for a specific job.
-   * @param {Object} job - The job to bill.
-   */
-  function openBill(job) { setBillingJobId(job.id);  setScreen('bill') }
 
   /**
    * Saves a new or edited job card to the database and updates local state.
    * @param {Object} form - The job form data.
    * @param {string} vehicleType - The selected vehicle type.
    */
-  async function saveJob(form, vehicleType) {
-    const id  = editingJobId ? editingJobId : generateId()
+  async function saveJob(form, vehicleType, editId = null) {
+    const id  = editId ? editId : generateId()
     const row = toDb(form, vehicleType, id)
 
     // Add new mechanic to roster if entered
@@ -168,7 +162,7 @@ const [error, setError]               = useState(null)
       if (newMech) setMechanics(p => [...p, newMech].sort((a, b) => a.name.localeCompare(b.name)))
     }
 
-    if (editingJobId) {
+    if (editId) {
       const { error } = await supabase.from('jobs').update(row).eq('id', id)
       if (error) { alert('Error: ' + error.message); return }
       setJobs(p => p.map(j => j.id === id ? fromDb(row) : j))
@@ -177,8 +171,7 @@ const [error, setError]               = useState(null)
       if (error) { alert('Error: ' + error.message); return }
       setJobs(p => [fromDb(row), ...p])
     }
-    setEditingJobId(null)
-    setScreen('list')
+    navigate('/dashboard')
   }
 
   /**
@@ -225,59 +218,6 @@ const [error, setError]               = useState(null)
   setJobs(p => p.map(j => j.id === jobId ? { ...j, mechanic: mechanicName } : j))
 }
 
-  // ── SCREEN ROUTING AFTER ALL FUNCTIONS ──
-  /**
-   * Renders the current screen based on `appState` and `screen` state.
-   * @returns {JSX.Element} The active screen component.
-   */
-  const renderScreen = () => {
-    if (appState === 'landing') return <LandingPage onEnter={() => setAppState('login')} />
-if (appState === 'login')   return <LoginScreen onLogin={handleLogin} onBack={() => setAppState('landing')} error={loginError} />
-if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('app')} />
-
-const editingJob = editingJobId ? jobs.find(j => j.id === editingJobId) : null
-const billingJob = billingJobId ? jobs.find(j => j.id === billingJobId) : null
-
-if (screen === 'form') {
-  if (editingJobId && !editingJob) {
-    if (loading) return <div style={{padding: 40, textAlign: 'center'}}>Loading...</div>
-    else { setScreen('list'); return null; }
-  }
-  return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => { setEditingJobId(null); setScreen('list'); }} mechanics={mechanics} isManager={isManager} />
-}
-if (screen === 'bill') {
-  if (!billingJob) {
-    if (loading) return <div style={{padding: 40, textAlign: 'center'}}>Loading...</div>
-    else { setScreen('list'); return null; }
-  }
-  return <BillingScreen job={billingJob} onBack={() => { setBillingJobId(null); setScreen('list'); }} />
-}
-
-if (screen === 'history')  return <CustomerHistory onBack={() => setScreen('list')} />
-if (screen === 'reports')  return <RevenueReports onBack={() => setScreen('list')} />
-if (screen === 'manager') return (
-  <ManagerDashboard
-    jobs={jobs}
-    mechanics={mechanics}
-    onStatusChange={updateStatus}
-    onAssign={assignMechanic}
-        onBill={openBill}
-    onBack={() => setScreen('list')}
-  />
-)
-
-return (
-  <JobList
-    onNew={openNew} onEdit={openEdit} onBill={openBill}
-    onDelete={deleteJob} onStatusChange={updateStatus}
-    isManager={isManager}
-    onManagerView={() => setScreen('manager')}
-    onScreen={setScreen}
-    onLogout={() => { localStorage.removeItem('jw_auth_role'); setAppState('login'); setIsManager(false); setScreen('list'); }}
-  />
-)
-  }
-
   return (
     <>
       <style>{`
@@ -312,7 +252,63 @@ return (
           color: rgba(255,255,255,0.3);
         }
       `}</style>
-      {renderScreen()}
+      <Routes>
+        <Route path="/" element={<LandingPage onEnter={() => navigate('/login')} />} />
+        <Route path="/login" element={<LoginScreen onLogin={handleLogin} onBack={() => navigate('/')} error={loginError} />} />
+        
+        <Route path="/loading" element={
+          <LoadingScreen onDone={() => {
+            loadData().then(() => {
+              const redirectTo = location.state?.redirectTo || '/dashboard'
+              navigate(redirectTo, { replace: true })
+            })
+          }} />
+        } />
+
+        {dataLoaded && (
+          <>
+            <Route path="/dashboard" element={
+              <JobList
+                onNew={() => navigate('/jobs/new')}
+                onEdit={(job) => {
+                  if (job.status === 'Delivered' && !isManager) return alert('Delivered jobs cannot be edited by staff.')
+                  navigate(`/jobs/${job.id}/edit`)
+                }}
+                onBill={(job) => navigate(`/jobs/${job.id}/bill`)}
+                onDelete={deleteJob}
+                onStatusChange={updateStatus}
+                isManager={isManager}
+                onManagerView={() => navigate('/manager')}
+                onScreen={(s) => navigate(`/${s}`)}
+                onLogout={handleLogout}
+              />
+            } />
+            <Route path="/jobs/new" element={
+              <JobCardForm initialData={null} onSave={(f, v) => saveJob(f, v, null)} onBack={() => navigate('/dashboard')} mechanics={mechanics} isManager={isManager} />
+            } />
+            <Route path="/jobs/:id/edit" element={
+              <EditJobWrapper jobs={jobs} onSave={saveJob} onBack={() => navigate('/dashboard')} mechanics={mechanics} isManager={isManager} />
+            } />
+            <Route path="/jobs/:id/bill" element={
+              <BillJobWrapper jobs={jobs} onBack={() => navigate('/dashboard')} />
+            } />
+            <Route path="/history" element={<CustomerHistory onBack={() => navigate('/dashboard')} />} />
+            <Route path="/reports" element={<RevenueReports onBack={() => navigate('/dashboard')} />} />
+            <Route path="/manager" element={
+              <ManagerDashboard
+                jobs={jobs}
+                mechanics={mechanics}
+                onStatusChange={updateStatus}
+                onAssign={assignMechanic}
+                onBill={(job) => navigate(`/jobs/${job.id}/bill`)}
+                onBack={() => navigate('/dashboard')}
+              />
+            } />
+          </>
+        )}
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </>
   )
 }
