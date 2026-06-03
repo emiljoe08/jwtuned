@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { printBill, downloadBill } from './PrintBill'
-import { Card, Field } from './App'
+import { Card, Field } from './shared'
 
 /** Returns a clean, empty line item for the billing form. */
 const emptyLineItem = () => ({ id: Date.now(), description: '', qty: '1', rate: '', type: 'labour' })

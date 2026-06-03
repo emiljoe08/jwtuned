@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import jwLogo from './assets/jjw.svg'
-import { STATUS, PhotoViewer, Card, Field } from './App'
+import { STATUS, PhotoViewer, Card, Field } from './shared'
 
 const emptyForm = {
   customerName: '', phone: '', address: '',

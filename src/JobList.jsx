@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase'
 import jwLogo from './assets/jjw.svg'
-import { STATUS, fromDb, PhotoViewer } from './App'
+import { STATUS, fromDb, PhotoViewer } from './shared'
 
 /**
  * Renders the dashboard list of job cards, including statistics and filters.

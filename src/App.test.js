@@ -1,4 +1,4 @@
-import { toDb, fromDb } from './App';
+import { toDb, fromDb } from './shared';
 
 describe('Database Mappers', () => {
   const mockForm = {
