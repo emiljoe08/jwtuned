@@ -258,7 +258,7 @@ export default function LandingPage({ onEnter }) {
           ))}
           <a href="https://www.instagram.com/jw_tuned" target="_blank" rel="noreferrer" className="nav-link"><InstagramIcon /></a>
           <a href="tel:+919447403837" className="btn-red" style={{ padding:'9px 18px', fontSize:13 }}>📞 Book Now</a>
-          <button onClick={onEnter} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Staff →</button>
+          <a href="/dashboard" target="_blank" rel="noopener noreferrer" style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', fontSize:12, cursor:'pointer', fontFamily:'inherit', textDecoration:'none' }}>Staff →</a>
         </div>
         <button className="mobile-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ background:'none', border:'none', color:'#fff', fontSize:22, cursor:'pointer', display:'flex', alignItems:'center' }}>
           {menuOpen ? '✕' : '☰'}

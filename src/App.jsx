@@ -6,6 +6,10 @@ import LoadingScreen from './LoadingScreen'
 import LandingPage from './LandingPage'
 import jwLogo from './assets/jjw.svg'
 import LoginScreen from './LoginScreen'
+import CustomerHistory from './CustomerHistory'
+import RevenueReports from './RevenueReports'
+import ManagerDashboard from './ManagerDashboard'
+
 
 const STATUS = {
   'Waiting':     { bg: 'rgba(245,158,11,0.1)', color: '#FCD34D', dot: '#F59E0B' },
@@ -87,8 +91,8 @@ function fromDb(row) {
  * Main Application component that handles state and routing between landing, login, loading, and dashboard.
  * @returns {JSX.Element} The rendered application component.
  */
-export default function App() {
- const [appState, setAppState]         = useState('landing')
+export default function App({ startAtDashboard = false }) {
+  const [appState, setAppState] = useState(startAtDashboard ? 'login' : 'landing')
 const [loginError, setLoginError]     = useState('')
 const [isManager, setIsManager]       = useState(false)  // ← add this
 const [screen, setScreen]             = useState('list')
@@ -220,8 +224,11 @@ const [error, setError]               = useState(null)
 if (appState === 'login')   return <LoginScreen onLogin={handleLogin} onBack={() => setAppState('landing')} error={loginError} />
 if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('app')} />
 
-if (screen === 'form') return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} mechanics={mechanics} />
-if (screen === 'bill') return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
+if (screen === 'form')     return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} mechanics={mechanics} />
+if (screen === 'bill')     return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
+if (screen === 'manager')  return <ManagerDashboard jobs={jobs} mechanics={mechanics} onStatusChange={updateStatus} onAssign={assignMechanic} onBack={() => setScreen('list')} />
+if (screen === 'history')  return <CustomerHistory onBack={() => setScreen('list')} />
+if (screen === 'reports')  return <RevenueReports onBack={() => setScreen('list')} />
 if (screen === 'manager') return (
   <ManagerDashboard
     jobs={jobs}
@@ -236,9 +243,11 @@ return (
   <JobList
     jobs={jobs} loading={loading} error={error}
     onNew={openNew} onEdit={openEdit} onBill={openBill}
-    onDelete={deleteJob} onStatusChange={updateStatus} onRefresh={loadJobs}
+    onDelete={deleteJob} onStatusChange={updateStatus}
+    onRefresh={() => setAppState('loading')}
     isManager={isManager}
     onManagerView={() => setScreen('manager')}
+    onScreen={setScreen}
   />
 )
   }
@@ -309,15 +318,15 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
             </div>
             <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 }}>Garage Management</div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={onRefresh} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: 10, width: 36, height: 36, fontSize: 16, cursor: 'pointer' }}>↻</button>
-            {isManager && (
-              <button onClick={onManagerView} style={{ background: 'rgba(232,49,10,0.1)', border: '1px solid rgba(232,49,10,0.3)', color: '#E8310A', borderRadius: 10, padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                📊 Manager
-              </button>
-            )}
-            <button onClick={onNew} style={{ background: '#fff', color: '#050505', border: 'none', borderRadius: 10, padding: '8px 16px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>+ New Job</button>
-          </div>
+         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+  <button onClick={onRefresh} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', borderRadius:10, width:36, height:36, fontSize:16, cursor:'pointer' }}>↻</button>
+  {isManager && <>
+    <button onClick={onManagerView} style={{ background:'rgba(232,49,10,0.1)', border:'1px solid rgba(232,49,10,0.3)', color:'#E8310A', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📊 Manager</button>
+    <button onClick={() => onScreen('reports')} style={{ background:'rgba(252,211,77,0.1)', border:'1px solid rgba(252,211,77,0.2)', color:'#FCD34D', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📈 Reports</button>
+  </>}
+  <button onClick={() => onScreen('history')} style={{ background:'rgba(147,197,253,0.1)', border:'1px solid rgba(147,197,253,0.2)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>🔍 History</button>
+  <button onClick={onNew} style={{ background:'#fff', color:'#050505', border:'none', borderRadius:10, padding:'8px 16px', fontWeight:600, fontSize:13, cursor:'pointer' }}>+ New Job</button>
+</div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
           {[
