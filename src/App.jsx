@@ -37,9 +37,9 @@ function generateId() {
  * @returns {JSX.Element} The rendered application component.
  */
 export default function App({ startAtDashboard = false }) {
-  const [appState, setAppState] = useState(startAtDashboard ? 'login' : 'landing')
+  const [appState, setAppState] = useState(() => localStorage.getItem('jw_auth_role') ? 'loading' : (startAtDashboard ? 'login' : 'landing'))
 const [loginError, setLoginError]     = useState('')
-const [isManager, setIsManager]       = useState(false)  // ← add this
+  const [isManager, setIsManager]       = useState(() => localStorage.getItem('jw_auth_role') === 'manager')
 const [screen, setScreen]             = useState('list')
 const [jobs, setJobs]                 = useState([])
 const [mechanics, setMechanics]       = useState([])     // ← add this
@@ -105,8 +105,10 @@ const [error, setError]               = useState(null)
    */
   function handleLogin(password) {
   if (password === 'jwtuned2024') {
+    localStorage.setItem('jw_auth_role', 'staff')
     setLoginError(''); setIsManager(false); setAppState('loading')
   } else if (password === 'jwmanager2024') {
+    localStorage.setItem('jw_auth_role', 'manager')
     setLoginError(''); setIsManager(true); setAppState('loading')
   } else {
     setLoginError('Wrong password. Try again.')
@@ -239,7 +241,7 @@ return (
     isManager={isManager}
     onManagerView={() => setScreen('manager')}
     onScreen={setScreen}
-    onLogout={() => { setAppState('login'); setIsManager(false); setScreen('list'); }}
+    onLogout={() => { localStorage.removeItem('jw_auth_role'); setAppState('login'); setIsManager(false); setScreen('list'); }}
   />
 )
   }
