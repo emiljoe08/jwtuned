@@ -15,6 +15,10 @@ const STATUS = {
 }
 
 let counter = 1
+/**
+ * Generates a unique job ID format (e.g., JW-2024-0001).
+ * @returns {string} The generated job ID.
+ */
 function generateId() {
   return `JW-${new Date().getFullYear()}-${String(counter++).padStart(4, '0')}`
 }
@@ -26,6 +30,13 @@ const emptyForm = {
   status: 'Waiting', photos: []
 }
 
+/**
+ * Maps form data to the database schema format.
+ * @param {Object} form - The form data.
+ * @param {string} vehicleType - The type of vehicle (e.g., '2W', '4W').
+ * @param {string} id - The job ID.
+ * @returns {Object} Database-ready object.
+ */
 function toDb(form, vehicleType, id) {
   return {
     id,
@@ -46,6 +57,11 @@ function toDb(form, vehicleType, id) {
   }
 }
 
+/**
+ * Maps a database row back to the application's form data structure.
+ * @param {Object} row - The database row.
+ * @returns {Object} Form-compatible data object.
+ */
 function fromDb(row) {
   return {
     id: row.id,
@@ -67,48 +83,80 @@ function fromDb(row) {
 }
 
 // ── APP ──────────────────────────────────────────────────────
+/**
+ * Main Application component that handles state and routing between landing, login, loading, and dashboard.
+ * @returns {JSX.Element} The rendered application component.
+ */
 export default function App() {
-  const [appState, setAppState]         = useState('landing')
-  const [loginError, setLoginError]     = useState('')
-  const [screen, setScreen]             = useState('list')
-  const [jobs, setJobs]                 = useState([])
-  const [editingJob, setEditingJob]     = useState(null)
-  const [billingJob, setBillingJob]     = useState(null)
-  const [loading, setLoading]           = useState(true)
-  const [error, setError]               = useState(null)
+ const [appState, setAppState]         = useState('landing')
+const [loginError, setLoginError]     = useState('')
+const [isManager, setIsManager]       = useState(false)  // ← add this
+const [screen, setScreen]             = useState('list')
+const [jobs, setJobs]                 = useState([])
+const [mechanics, setMechanics]       = useState([])     // ← add this
+const [editingJob, setEditingJob]     = useState(null)
+const [billingJob, setBillingJob]     = useState(null)
+const [loading, setLoading]           = useState(true)
+const [error, setError]               = useState(null)
 
-  useEffect(() => {
-    if (appState === 'app') {
-      async function load() {
-        setLoading(true); setError(null)
-        const { data, error } = await supabase
-          .from('jobs').select('*').order('created_at', { ascending: false })
-        if (error) { setError('Could not load jobs.'); console.error(error) }
-        else {
-          setJobs(data.map(fromDb))
-          const nums = data.map(r => parseInt(r.id.split('-')[2])).filter(n => !isNaN(n))
-          counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
-        }
-        setLoading(false)
+ useEffect(() => {
+  if (appState === 'app') {
+    async function load() {
+      setLoading(true); setError(null)
+      const [jobsRes, mechRes] = await Promise.all([
+        supabase.from('jobs').select('*').order('created_at', { ascending: false }),
+        supabase.from('mechanics').select('*').order('name')
+      ])
+      if (jobsRes.error) { setError('Could not load jobs.'); console.error(jobsRes.error) }
+      else {
+        setJobs(jobsRes.data.map(fromDb))
+        const nums = jobsRes.data.map(r => parseInt(r.id.split('-')[2])).filter(n => !isNaN(n))
+        counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
       }
-      load()
+      if (mechRes.data) setMechanics(mechRes.data)
+      setLoading(false)
     }
-  }, [appState])
+    load()
+  }
+}, [appState])
 
   // ── ALL FUNCTIONS DEFINED HERE FIRST ──
+  /**
+   * Validates the login password and updates the application state.
+   * @param {string} password - The entered password.
+   */
   function handleLogin(password) {
-    if (password === 'jwtuned2024') {
-      setLoginError('')
-      setAppState('loading')
-    } else {
-      setLoginError('Wrong password. Try again.')
-    }
+  if (password === 'jwtuned2024') {
+    setLoginError(''); setIsManager(false); setAppState('loading')
+  } else if (password === 'jwmanager2024') {
+    setLoginError(''); setIsManager(true); setAppState('loading')
+  } else {
+    setLoginError('Wrong password. Try again.')
   }
+}
 
+  /**
+   * Opens the form to create a new job card.
+   */
   function openNew()     { setEditingJob(null); setScreen('form') }
+
+  /**
+   * Opens the form to edit an existing job card.
+   * @param {Object} job - The job to edit.
+   */
   function openEdit(job) { setEditingJob(job);  setScreen('form') }
+
+  /**
+   * Opens the billing screen for a specific job.
+   * @param {Object} job - The job to bill.
+   */
   function openBill(job) { setBillingJob(job);  setScreen('bill') }
 
+  /**
+   * Saves a new or edited job card to the database and updates local state.
+   * @param {Object} form - The job form data.
+   * @param {string} vehicleType - The selected vehicle type.
+   */
   async function saveJob(form, vehicleType) {
     const id  = editingJob ? editingJob.id : generateId()
     const row = toDb(form, vehicleType, id)
@@ -124,6 +172,10 @@ export default function App() {
     setScreen('list')
   }
 
+  /**
+   * Deletes a job card from the database after user confirmation.
+   * @param {string} id - The ID of the job to delete.
+   */
   async function deleteJob(id) {
     if (!window.confirm('Delete this job card?')) return
     const { error } = await supabase.from('jobs').delete().eq('id', id)
@@ -131,29 +183,64 @@ export default function App() {
     setJobs(p => p.filter(j => j.id !== id))
   }
 
+  /**
+   * Updates the status of a job card in the database and local state.
+   * @param {string} id - The ID of the job to update.
+   * @param {string} status - The new status to set.
+   */
   async function updateStatus(id, status) {
     const { error } = await supabase.from('jobs').update({ status }).eq('id', id)
     if (error) { alert('Error: ' + error.message); return }
     setJobs(p => p.map(j => j.id === id ? { ...j, status } : j))
   }
+  async function assignMechanic(jobId, mechanicName, isNew) {
+  // If new mechanic, add to roster first
+  if (isNew && mechanicName) {
+    const { data: existing } = await supabase
+      .from('mechanics').select('id').eq('name', mechanicName).single()
+    if (!existing) {
+      const { data: newMech } = await supabase
+        .from('mechanics').insert({ name: mechanicName }).select().single()
+      if (newMech) setMechanics(p => [...p, newMech].sort((a,b) => a.name.localeCompare(b.name)))
+    }
+  }
+  // Update job
+  const { error } = await supabase.from('jobs').update({ mechanic: mechanicName }).eq('id', jobId)
+  if (error) { alert('Error: ' + error.message); return }
+  setJobs(p => p.map(j => j.id === jobId ? { ...j, mechanic: mechanicName } : j))
+}
 
   // ── SCREEN ROUTING AFTER ALL FUNCTIONS ──
+  /**
+   * Renders the current screen based on `appState` and `screen` state.
+   * @returns {JSX.Element} The active screen component.
+   */
   const renderScreen = () => {
     if (appState === 'landing') return <LandingPage onEnter={() => setAppState('login')} />
-    if (appState === 'login')   return <LoginScreen onLogin={handleLogin} onBack={() => setAppState('landing')} error={loginError} />
-    if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('app')} />
+if (appState === 'login')   return <LoginScreen onLogin={handleLogin} onBack={() => setAppState('landing')} error={loginError} />
+if (appState === 'loading') return <LoadingScreen onDone={() => setAppState('app')} />
 
-    if (screen === 'form') return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} />
-    if (screen === 'bill') return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
+if (screen === 'form') return <JobCardForm initialData={editingJob} onSave={saveJob} onBack={() => setScreen('list')} mechanics={mechanics} />
+if (screen === 'bill') return <BillingScreen job={billingJob} onBack={() => setScreen('list')} />
+if (screen === 'manager') return (
+  <ManagerDashboard
+    jobs={jobs}
+    mechanics={mechanics}
+    onStatusChange={updateStatus}
+    onAssign={assignMechanic}
+    onBack={() => setScreen('list')}
+  />
+)
 
-    return (
-      <JobList
-        jobs={jobs} loading={loading} error={error}
-        onNew={openNew} onEdit={openEdit} onBill={openBill}
-        onDelete={deleteJob} onStatusChange={updateStatus}
-        onRefresh={() => setAppState('loading')}
-      />
-    )
+return (
+  <JobList
+    jobs={jobs} loading={loading} error={error}
+    onNew={openNew} onEdit={openEdit} onBill={openBill}
+    onDelete={deleteJob} onStatusChange={updateStatus} onRefresh={loadJobs}
+    isManager={isManager}
+    onManagerView={() => setScreen('manager')}
+  />
+)
   }
 
   return (
@@ -196,7 +283,11 @@ export default function App() {
 }
 
 // ── SCREEN 1 — LIST ──────────────────────────────────────────
-function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStatusChange, onRefresh }) {
+/**
+ * Renders the dashboard list of job cards, including statistics and filters.
+ * @returns {JSX.Element} The job list screen component.
+ */
+function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStatusChange, onRefresh, isManager, onManagerView }) {
   const [filter, setFilter] = useState('All')
   const tabs     = ['All', 'Waiting', 'In Progress', 'Ready', 'Delivered']
   const filtered = filter === 'All' ? jobs : jobs.filter(j => j.status === filter)
@@ -220,6 +311,11 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={onRefresh} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: 10, width: 36, height: 36, fontSize: 16, cursor: 'pointer' }}>↻</button>
+            {isManager && (
+              <button onClick={onManagerView} style={{ background: 'rgba(232,49,10,0.1)', border: '1px solid rgba(232,49,10,0.3)', color: '#E8310A', borderRadius: 10, padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                📊 Manager
+              </button>
+            )}
             <button onClick={onNew} style={{ background: '#fff', color: '#050505', border: 'none', borderRadius: 10, padding: '8px 16px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>+ New Job</button>
           </div>
         </div>
@@ -276,12 +372,17 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
 }
 
 // ── JOB ROW ──────────────────────────────────────────────────
+/**
+ * Renders an individual job card row in the dashboard list.
+ * @returns {JSX.Element} The job row component.
+ */
 function JobRow({ job, onEdit, onBill, onDelete, onStatusChange }) {
   const [expanded, setExpanded] = useState(false)
   const [viewing, setViewing]   = useState(null)
   const sc       = STATUS[job.status] || STATUS['Waiting']
   const statuses = ['Waiting', 'In Progress', 'Ready', 'Delivered']
 
+  /** Opens WhatsApp with a pre-filled status update message for the customer. */
   function handleWhatsApp() {
     const msg = `Hello ${job.customerName} 👋\n\nYour vehicle *${job.regNumber}* (${job.makeModel}) status at *JW Tuned* is now:\n\n*${job.status}* ✅\n\nJob card: ${job.id}\n\nFor any queries, feel free to call us!`
     window.open(`https://wa.me/${job.phone}?text=${encodeURIComponent(msg)}`, '_blank')
@@ -378,8 +479,13 @@ function JobRow({ job, onEdit, onBill, onDelete, onStatusChange }) {
 }
 
 // ── SCREEN 3 — BILLING ───────────────────────────────────────
+/** Returns a clean, empty line item for the billing form. */
 const emptyLineItem = () => ({ id: Date.now(), description: '', qty: '1', rate: '', type: 'labour' })
 
+/**
+ * Renders the billing screen where users can add labour and parts, calculate totals, and print the bill.
+ * @returns {JSX.Element} The billing screen component.
+ */
 function BillingScreen({ job, onBack }) {
   const [items, setItems]         = useState([
     { id: 1, description: 'Labour charges', qty: '1', rate: '', type: 'labour' },
@@ -390,14 +496,28 @@ function BillingScreen({ job, onBack }) {
   const [note, setNote]           = useState('')
   const [printed, setPrinted]     = useState(false)
 
+  /**
+   * Adds a new empty line item to the bill.
+   * @param {string} type - The type of the item ('labour' or 'parts').
+   */
   function addItem(type) {
     setItems(p => [...p, { ...emptyLineItem(), type }])
   }
 
+  /**
+   * Updates a specific field of an existing line item.
+   * @param {number} id - The ID of the line item to update.
+   * @param {string} field - The property to update (e.g., 'qty', 'rate').
+   * @param {string} value - The new value for the property.
+   */
   function updateItem(id, field, value) {
     setItems(p => p.map(i => i.id === id ? { ...i, [field]: value } : i))
   }
 
+  /**
+   * Removes a line item from the bill.
+   * @param {number} id - The ID of the line item to remove.
+   */
   function removeItem(id) {
     setItems(p => p.filter(i => i.id !== id))
   }
@@ -408,6 +528,7 @@ function BillingScreen({ job, onBack }) {
   const labourAmt  = items.filter(i => i.type === 'labour').reduce((s, i) => s + (parseFloat(i.qty)||0)*(parseFloat(i.rate)||0), 0)
   const partsAmt   = items.filter(i => i.type === 'parts').reduce((s, i)  => s + (parseFloat(i.qty)||0)*(parseFloat(i.rate)||0), 0)
 
+  /** Prepares a summary message and opens WhatsApp to send the bill to the customer. */
   function handleWhatsApp() {
     const lines = items.map(i => `  • ${i.description}: ₹${((parseFloat(i.qty)||0)*(parseFloat(i.rate)||0)).toFixed(0)}`).join('\n')
     const msg = `Hello ${job.customerName} 👋\n\n*Bill from JW Tuned*\nJob: ${job.id}\nVehicle: ${job.regNumber} (${job.makeModel})\n\n${lines}\n\nSubtotal: ₹${subtotal.toFixed(0)}${discAmt ? `\nDiscount: -₹${discAmt}` : ''}\n*Total: ₹${total.toFixed(0)}*\n\nPayment: ${paid ? `Paid via ${payMode} ✅` : 'Pending 🔴'}\n\nThank you for choosing JW Tuned! 🔧`
@@ -417,6 +538,7 @@ function BillingScreen({ job, onBack }) {
   
 
 // inside BillingScreen, replace handlePrint:
+/** Triggers the generation and printing of the job bill. */
 function handlePrint() {
   printBill({ job, items, discount, paid, payMode, note })
 }
@@ -569,13 +691,19 @@ function handlePrint() {
 }
 
 // ── SCREEN 2 — FORM ──────────────────────────────────────────
-function JobCardForm({ initialData, onSave, onBack }) {
+/**
+ * Renders the form to create or edit a job card.
+ * @returns {JSX.Element} The job card form component.
+ */
+function JobCardForm({ initialData, onSave, onBack, mechanics }) {
   const [vehicleType, setVehicleType] = useState(initialData?.vehicleType || '4W')
   const [form, setForm]               = useState(initialData ? { ...initialData } : { ...emptyForm })
   const [saving, setSaving]           = useState(false)
 
+  /** Updates a specific field in the job card form data. */
   function handleChange(field, value) { setForm(p => ({ ...p, [field]: value })) }
 
+  /** Validates the form data and triggers the save callback. */
   async function handleSave() {
     if (!form.customerName || !form.phone || !form.regNumber || !form.makeModel || !form.complaint) {
       alert('Please fill: Name, Phone, Reg. Number, Make & Model, and Complaint')
@@ -625,7 +753,12 @@ function JobCardForm({ initialData, onSave, onBack }) {
             <textarea rows={3} placeholder="Describe the issue..." value={form.complaint} onChange={e => handleChange('complaint', e.target.value)} />
           </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <Field label="Mechanic"><input placeholder="Name" value={form.mechanic} onChange={e => handleChange('mechanic', e.target.value)} /></Field>
+            <Field label="Mechanic">
+              <select value={form.mechanic} onChange={e => handleChange('mechanic', e.target.value)} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: 8, padding: '12px 14px', fontFamily: 'inherit', fontSize: 14, outline: 'none' }}>
+                <option value="" style={{ background: '#1a1a1a', color: '#fff' }}>— Select —</option>
+                {mechanics?.map(m => <option key={m.id} value={m.name} style={{ background: '#1a1a1a', color: '#fff' }}>{m.name}</option>)}
+              </select>
+            </Field>
           </div>
           <Field label="Expected Delivery"><input placeholder="Today 5:00 PM" value={form.deliveryTime} onChange={e => handleChange('deliveryTime', e.target.value)} /></Field>
           <Field label="Status">
@@ -656,9 +789,17 @@ function JobCardForm({ initialData, onSave, onBack }) {
 }
 
 // ── IMAGE UPLOADER ───────────────────────────────────────────
+/**
+ * Component to handle selecting and displaying multiple photo uploads.
+ * @returns {JSX.Element} The image uploader component.
+ */
 function ImageUploader({ photos, onChange }) {
   const [viewing, setViewing] = useState(null)
 
+  /**
+   * Reads the selected files and converts them to data URLs before adding them to the photos list.
+   * @param {Event} e - The file input change event.
+   */
   function handleFiles(e) {
     const files = Array.from(e.target.files)
     files.forEach(file => {
@@ -694,6 +835,10 @@ function ImageUploader({ photos, onChange }) {
 }
 
 // ── PHOTO VIEWER ─────────────────────────────────────────────
+/**
+ * A full-screen modal component for viewing a selected photo.
+ * @returns {JSX.Element} The photo viewer modal.
+ */
 function PhotoViewer({ photo, onClose }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -705,6 +850,10 @@ function PhotoViewer({ photo, onClose }) {
 }
 
 // ── REUSABLE ─────────────────────────────────────────────────
+/**
+ * A reusable card container component for grouping form sections.
+ * @returns {JSX.Element}
+ */
 function Card({ title, children }) {
   return (
     <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', marginBottom: 16, overflow: 'hidden' }}>
@@ -714,6 +863,10 @@ function Card({ title, children }) {
   )
 }
 
+/**
+ * A reusable input field wrapper component with a label.
+ * @returns {JSX.Element}
+ */
 function Field({ label, children }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

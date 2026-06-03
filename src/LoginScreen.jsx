@@ -1,11 +1,19 @@
 import { useState } from 'react'
 import jwLogo from './assets/jjw.svg'
 
+/**
+ * Component rendering the Staff Portal login screen.
+ * @returns {JSX.Element} The login screen component.
+ */
 export default function LoginScreen({ onLogin, onBack, error }) {
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [shaking, setShaking]   = useState(false)
 
+  /**
+   * Handles the login form submission and applies a shake effect on incorrect attempts.
+   * @param {Event} e - The form submission event.
+   */
   function handleSubmit(e) {
     e.preventDefault()
     if (password.trim() === '') return

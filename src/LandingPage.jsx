@@ -1,19 +1,24 @@
 import { useEffect, useState, useRef } from 'react'
 import jwLogo from './assets/jjw.svg'
 
+/** Returns an SVG icon for WhatsApp. */
 const WhatsAppIcon = () => (
   <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" style={{ verticalAlign: 'middle' }}>
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.885-.653-1.48-1.46-1.653-1.756-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a5.8 5.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.452-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
   </svg>
 )
 
+/** Returns an SVG icon for Instagram. */
 const InstagramIcon = () => (
   <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" style={{ verticalAlign: 'middle' }}>
     <path d="M12 2.163c3.204 0 3.584.012 4.85.067 3.282.148 4.771 1.649 4.919 4.932.055 1.265.067 1.645.067 4.849 0 3.205-.012 3.584-.067 4.849-.148 3.281-1.637 4.783-4.919 4.932-1.266.055-1.646.067-4.85.067-3.204 0-3.584-.012-4.849-.067-3.283-.149-4.772-1.651-4.92-4.932-.054-1.265-.067-1.644-.067-4.849 0-3.204.013-3.584.067-4.849.148-3.281 1.637-4.784 4.92-4.932 1.265-.055 1.645-.067 4.849-.067zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
   </svg>
 )
 
-// 3D Floating gear component
+/**
+ * Renders an animated floating SVG gear with varying opacity and blur to create depth.
+ * @returns {JSX.Element} Floating gear element.
+ */
 function FloatingGear({ size, x, y, duration, opacity, blur }) {
   return (
     <div style={{
@@ -34,9 +39,14 @@ function FloatingGear({ size, x, y, duration, opacity, blur }) {
   )
 }
 
-// 3D card with tilt effect
+/**
+ * A wrapper component that applies a 3D tilt transformation tracking mouse movement.
+ * @returns {JSX.Element} The tilt-enabled card wrapper.
+ */
 function TiltCard({ children, style }) {
   const ref = useRef(null)
+
+  /** Handles mouse movement to update the tilt perspective based on cursor position. */
   function handleMove(e) {
     const el = ref.current
     if (!el) return
@@ -45,6 +55,8 @@ function TiltCard({ children, style }) {
     const y = ((e.clientY - rect.top) / rect.height - 0.5) * -12
     el.style.transform = `perspective(600px) rotateX(${y}deg) rotateY(${x}deg) scale(1.02)`
   }
+
+  /** Resets the tilt transformation when the mouse leaves the element. */
   function handleLeave() {
     if (ref.current) ref.current.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg) scale(1)'
   }
@@ -56,7 +68,10 @@ function TiltCard({ children, style }) {
   )
 }
 
-// FAQ item
+/**
+ * Renders an expandable FAQ item.
+ * @returns {JSX.Element} The FAQ item.
+ */
 function FAQItem({ q, a }) {
   const [open, setOpen] = useState(false)
   return (
@@ -72,6 +87,10 @@ function FAQItem({ q, a }) {
   )
 }
 
+/**
+ * Main Landing Page component for the public-facing website.
+ * @returns {JSX.Element} The landing page screen.
+ */
 export default function LandingPage({ onEnter }) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -81,6 +100,10 @@ export default function LandingPage({ onEnter }) {
   const [clickPulse, setClickPulse] = useState(false)
   const clickTimeout = useRef(null)
 
+  /**
+   * Tracks global mouse movements to apply parallax and displacement effects to background elements.
+   * @param {MouseEvent} e - The mouse move event.
+   */
   function handleMouseMove(e) {
     const x = (e.clientX / window.innerWidth - 0.5) * 40;
     const y = (e.clientY / window.innerHeight - 0.5) * 40;

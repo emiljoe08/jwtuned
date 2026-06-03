@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import jwLogo from './assets/jjw.svg'
 
+/**
+ * Renders an animated loading screen simulating an initialization process before navigating to the app dashboard.
+ * @returns {JSX.Element} The loading screen component.
+ */
 export default function LoadingScreen({ onDone }) {
   const [step, setStep]         = useState(0)
   const [progress, setProgress] = useState(0)

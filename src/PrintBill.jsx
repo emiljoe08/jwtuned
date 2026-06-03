@@ -1,5 +1,9 @@
 import jwLogo from './assets/jjw.svg'
 
+/**
+ * Opens a new window, generates the HTML for the final service bill, and triggers the browser's print dialog.
+ * @param {Object} data - An object containing job details, line items, discounts, and payment info.
+ */
 export function printBill({ job, items, discount, paid, payMode, note }) {
   const subtotal  = items.reduce((s, i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.rate)||0), 0)
   const discAmt   = parseFloat(discount) || 0
