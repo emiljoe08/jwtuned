@@ -1,10 +1,9 @@
 import jwLogo from './assets/jjw.svg'
 
 /**
- * Opens a new window, generates the HTML for the final service bill, and triggers the browser's print dialog.
- * @param {Object} data - An object containing job details, line items, discounts, and payment info.
+ * Internal helper to generate the HTML for the bill.
  */
-export function printBill({ job, items, discount, paid, payMode, note }) {
+function buildHtml({ job, items, discount, paid, payMode, note }) {
   const subtotal  = items.reduce((s, i) => s + (parseFloat(i.qty)||0) * (parseFloat(i.rate)||0), 0)
   const discAmt   = parseFloat(discount) || 0
   const total     = Math.max(0, subtotal - discAmt)
@@ -364,6 +363,15 @@ export function printBill({ job, items, discount, paid, payMode, note }) {
     </body>
     </html>
   `
+  return html
+}
+
+/**
+ * Opens a new window, generates the HTML for the final service bill, and triggers the browser's print dialog.
+ * @param {Object} data - An object containing job details, line items, discounts, and payment info.
+ */
+export function printBill(data) {
+  const html = buildHtml(data)
 
   // Open in new window and print
   const win = window.open('', '_blank', 'width=750,height=900')
@@ -373,4 +381,39 @@ export function printBill({ job, items, discount, paid, payMode, note }) {
     win.focus()
     win.print()
   }
+}
+
+/**
+ * Opens a new window, injects html2pdf, generates a PDF of the bill, triggers the download, and closes the window.
+ * @param {Object} data - An object containing job details, line items, discounts, and payment info.
+ */
+export function downloadBill(data) {
+  let html = buildHtml(data)
+  
+  // Inject html2pdf script into head
+  html = html.replace('</head>', `
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  </head>`)
+  
+  // Inject PDF generation script into body
+  html = html.replace('</body>', `
+    <script>
+      window.onload = () => {
+        const element = document.body;
+        html2pdf().set({
+          margin: 10,
+          filename: '${data.job.id}-Bill.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(element).save().then(() => {
+          setTimeout(() => window.close(), 1000);
+        });
+      };
+    </script>
+  </body>`)
+
+  const win = window.open('', '_blank', 'width=750,height=900')
+  win.document.write(html)
+  win.document.close()
 }

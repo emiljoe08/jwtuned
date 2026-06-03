@@ -10,11 +10,16 @@ const STATUS = {
 
 const STATUSES = ['Waiting', 'In Progress', 'Ready', 'Delivered']
 
-export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAssign, onBack }) {
+export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAssign, onBill, onBack }) {
   const [view, setView] = useState('kanban') // kanban | workload | unassigned | grouped
 
   const unassigned = jobs.filter(j => !j.mechanic || j.mechanic.trim() === '')
   const activeJobs = jobs.filter(j => j.status !== 'Delivered')
+
+  function handleWhatsApp(job) {
+    const msg = `Hello ${job.customerName} 👋\n\nYour vehicle *${job.regNumber}* (${job.makeModel}) status at *JW Tuned* is now:\n\n*${job.status}* ✅\n\nJob card: ${job.id}\n\nFor any queries, feel free to call us!`
+    window.open(`https://wa.me/${job.phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  }
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#050505', fontFamily: 'inherit' }}>
@@ -99,7 +104,7 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
                   )}
 
                   {colJobs.map(job => (
-                    <KanbanCard key={job.id} job={job} mechanics={mechanics} onStatusChange={onStatusChange} onAssign={onAssign} statuses={STATUSES} />
+                    <KanbanCard key={job.id} job={job} mechanics={mechanics} onStatusChange={onStatusChange} onAssign={onAssign} onBill={onBill} onWhatsApp={handleWhatsApp} statuses={STATUSES} />
                   ))}
                 </div>
               )
@@ -121,6 +126,8 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
                 mechanics={mechanics}
                 onStatusChange={onStatusChange}
                 onAssign={onAssign}
+                onBill={onBill}
+                onWhatsApp={handleWhatsApp}
                 highlight
               />
             )}
@@ -134,6 +141,8 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
                   mechanics={mechanics}
                   onStatusChange={onStatusChange}
                   onAssign={onAssign}
+                  onBill={onBill}
+                  onWhatsApp={handleWhatsApp}
                 />
               )
             })}
@@ -157,7 +166,7 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {unassigned.map(job => (
-                  <AssignRow key={job.id} job={job} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} />
+                  <AssignRow key={job.id} job={job} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} onBill={onBill} onWhatsApp={handleWhatsApp} />
                 ))}
               </div>
             )}
@@ -168,13 +177,13 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
         {view === 'grouped' && (
           <div>
             {unassigned.length > 0 && (
-              <GroupBlock name="⚠️ Unassigned" jobs={unassigned} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} highlight />
+              <GroupBlock name="⚠️ Unassigned" jobs={unassigned} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} onBill={onBill} onWhatsApp={handleWhatsApp} highlight />
             )}
             {mechanics.map(m => {
               const mJobs = jobs.filter(j => j.mechanic === m.name)
               if (mJobs.length === 0) return null
               return (
-                <GroupBlock key={m.id} name={m.name} jobs={mJobs} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} />
+                <GroupBlock key={m.id} name={m.name} jobs={mJobs} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} onBill={onBill} onWhatsApp={handleWhatsApp} />
               )
             })}
           </div>
@@ -186,7 +195,7 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
 }
 
 // ── KANBAN CARD ──────────────────────────────────────────────
-function KanbanCard({ job, mechanics, onStatusChange, onAssign, statuses }) {
+function KanbanCard({ job, mechanics, onStatusChange, onAssign, onBill, onWhatsApp, statuses }) {
   const sc = STATUS[job.status]
   return (
     <div className="kanban-card">
@@ -214,6 +223,10 @@ function KanbanCard({ job, mechanics, onStatusChange, onAssign, statuses }) {
             </button>
           )
         })}
+      </div>
+      <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+        <button onClick={() => onBill(job)} style={{ flex: 1, padding: '4px 2px', borderRadius: 6, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.1)', color: '#818CF8', fontSize: 9, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>🧾 Bill</button>
+        <button onClick={() => onWhatsApp(job)} style={{ flex: 1, padding: '4px 2px', borderRadius: 6, border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.1)', color: '#4ADE80', fontSize: 9, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>💬 WA</button>
       </div>
     </div>
   )
@@ -265,7 +278,7 @@ function MechanicSelect({ job, mechanics, onAssign }) {
 }
 
 // ── WORKLOAD BLOCK ───────────────────────────────────────────
-function WorkloadBlock({ name, jobs, mechanics, onStatusChange, onAssign, highlight }) {
+function WorkloadBlock({ name, jobs, mechanics, onStatusChange, onAssign, onBill, onWhatsApp, highlight }) {
   const [open, setOpen] = useState(true)
   const active = jobs.filter(j => j.status !== 'Delivered')
   const done = jobs.filter(j => j.status === 'Delivered')
@@ -296,7 +309,7 @@ function WorkloadBlock({ name, jobs, mechanics, onStatusChange, onAssign, highli
       {open && jobs.length > 0 && (
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {jobs.map(job => (
-            <AssignRow key={job.id} job={job} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} compact />
+            <AssignRow key={job.id} job={job} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} onBill={onBill} onWhatsApp={onWhatsApp} compact />
           ))}
         </div>
       )}
@@ -308,7 +321,7 @@ function WorkloadBlock({ name, jobs, mechanics, onStatusChange, onAssign, highli
 }
 
 // ── GROUP BLOCK ──────────────────────────────────────────────
-function GroupBlock({ name, jobs, mechanics, onAssign, onStatusChange, highlight }) {
+function GroupBlock({ name, jobs, mechanics, onAssign, onStatusChange, onBill, onWhatsApp, highlight }) {
   const [open, setOpen] = useState(true)
   return (
     <div style={{ marginBottom: 14, background: 'rgba(255,255,255,0.02)', border: `1px solid ${highlight ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 12, overflow: 'hidden' }}>
@@ -320,7 +333,7 @@ function GroupBlock({ name, jobs, mechanics, onAssign, onStatusChange, highlight
       {open && (
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {jobs.map(job => (
-            <AssignRow key={job.id} job={job} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} />
+            <AssignRow key={job.id} job={job} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} onBill={onBill} onWhatsApp={onWhatsApp} />
           ))}
         </div>
       )}
@@ -329,7 +342,7 @@ function GroupBlock({ name, jobs, mechanics, onAssign, onStatusChange, highlight
 }
 
 // ── ASSIGN ROW ───────────────────────────────────────────────
-function AssignRow({ job, mechanics, onAssign, onStatusChange, compact }) {
+function AssignRow({ job, mechanics, onAssign, onStatusChange, onBill, onWhatsApp, compact }) {
   const sc = STATUS[job.status]
   return (
     <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: compact ? '10px 12px' : '12px 14px' }}>
@@ -363,6 +376,9 @@ function AssignRow({ job, mechanics, onAssign, onStatusChange, compact }) {
               </button>
             )
           })}
+          <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)', alignSelf: 'center', margin: '0 4px' }} />
+          <button onClick={() => onBill(job)} style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.1)', color: '#818CF8', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>🧾 Bill</button>
+          <button onClick={() => onWhatsApp(job)} style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.1)', color: '#4ADE80', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>💬 WA</button>
         </div>
       </div>
     </div>
