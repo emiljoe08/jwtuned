@@ -248,6 +248,7 @@ return (
     isManager={isManager}
     onManagerView={() => setScreen('manager')}
     onScreen={setScreen}
+    onLogout={() => { setAppState('login'); setIsManager(false); setScreen('list'); }}
   />
 )
   }
@@ -296,7 +297,7 @@ return (
  * Renders the dashboard list of job cards, including statistics and filters.
  * @returns {JSX.Element} The job list screen component.
  */
-function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStatusChange, onRefresh, isManager, onManagerView }) {
+function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStatusChange, onRefresh, isManager, onManagerView, onScreen, onLogout }) {
   const [filter, setFilter] = useState('All')
   const tabs     = ['All', 'Waiting', 'In Progress', 'Ready', 'Delivered']
   const filtered = filter === 'All' ? jobs : jobs.filter(j => j.status === filter)
@@ -326,6 +327,7 @@ function JobList({ jobs, loading, error, onNew, onEdit, onBill, onDelete, onStat
   </>}
   <button onClick={() => onScreen('history')} style={{ background:'rgba(147,197,253,0.1)', border:'1px solid rgba(147,197,253,0.2)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>🔍 History</button>
   <button onClick={onNew} style={{ background:'#fff', color:'#050505', border:'none', borderRadius:10, padding:'8px 16px', fontWeight:600, fontSize:13, cursor:'pointer' }}>+ New Job</button>
+  <button onClick={onLogout} style={{ background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', color:'#F87171', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft: 8 }}>🚪 Logout</button>
 </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
