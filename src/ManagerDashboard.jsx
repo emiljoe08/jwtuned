@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { supabase } from './supabase'
+import { useState, memo, useCallback } from 'react'
 
 const STATUS = {
   'Waiting':     { bg: 'rgba(245,158,11,0.1)', color: '#FCD34D', dot: '#F59E0B', col: '#1a1000' },
@@ -16,10 +15,10 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
   const unassigned = jobs.filter(j => !j.mechanic || j.mechanic.trim() === '')
   const activeJobs = jobs.filter(j => j.status !== 'Delivered')
 
-  function handleWhatsApp(job) {
+  const handleWhatsApp = useCallback((job) => {
     const msg = `Hello ${job.customerName} 👋\n\nYour vehicle *${job.regNumber}* (${job.makeModel}) status at *JW Tuned* is now:\n\n*${job.status}* ✅\n\nJob card: ${job.id}\n\nFor any queries, feel free to call us!`
     window.open(`https://wa.me/${job.phone}?text=${encodeURIComponent(msg)}`, '_blank')
-  }
+  }, [])
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#050505', fontFamily: 'inherit' }}>
@@ -197,7 +196,7 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
 }
 
 // ── KANBAN CARD ──────────────────────────────────────────────
-function KanbanCard({ job, mechanics, onStatusChange, onAssign, onBill, onWhatsApp, statuses }) {
+const KanbanCard = memo(function KanbanCard({ job, mechanics, onStatusChange, onAssign, onBill, onWhatsApp, statuses }) {
   const sc = STATUS[job.status]
   return (
     <div className="kanban-card">
@@ -232,7 +231,7 @@ function KanbanCard({ job, mechanics, onStatusChange, onAssign, onBill, onWhatsA
       </div>
     </div>
   )
-}
+})
 
 // ── MECHANIC SELECT ──────────────────────────────────────────
 function MechanicSelect({ job, mechanics, onAssign }) {
@@ -344,7 +343,7 @@ function GroupBlock({ name, jobs, mechanics, onAssign, onStatusChange, onBill, o
 }
 
 // ── ASSIGN ROW ───────────────────────────────────────────────
-function AssignRow({ job, mechanics, onAssign, onStatusChange, onBill, onWhatsApp, compact }) {
+const AssignRow = memo(function AssignRow({ job, mechanics, onAssign, onStatusChange, onBill, onWhatsApp, compact }) {
   const sc = STATUS[job.status]
   return (
     <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: compact ? '10px 12px' : '12px 14px' }}>
@@ -385,4 +384,4 @@ function AssignRow({ job, mechanics, onAssign, onStatusChange, onBill, onWhatsAp
       </div>
     </div>
   )
-}
+})

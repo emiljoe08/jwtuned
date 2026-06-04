@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, Component } from 'react'
 import { Routes, Route, useNavigate, useLocation, Navigate, useParams } from 'react-router-dom'
 import { supabase } from './supabase'
 import LoadingScreen from './LoadingScreen'
@@ -11,16 +11,31 @@ import ManagerDashboard from './ManagerDashboard'
 import BillingScreen from './BillingScreen'
 import JobList from './JobList'
 import JobCardForm from './JobCardForm'
+import CustomerHistory from './CustomerHistory'
 import { toDb, fromDb } from './shared'
 
 
 
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
 
-const STATUS = {
-  'Waiting':     { bg: 'rgba(245,158,11,0.1)', color: '#FCD34D', dot: '#F59E0B' },
-  'In Progress': { bg: 'rgba(59,130,246,0.1)', color: '#93C5FD', dot: '#3B82F6' },
-  'Ready':       { bg: 'rgba(34,197,94,0.1)',  color: '#6EE7B7', dot: '#22C55E' },
-  'Delivered':   { bg: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', dot: 'rgba(255,255,255,0.3)' },
+  static getDerivedStateFromError(error) {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Uncaught error:", error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div style={{ color: '#FCA5A5', padding: 40, textAlign: 'center' }}><h2>Something went wrong.</h2><p>Please check the console for more details.</p></div>
+    }
+    return this.props.children
+  }
 }
 
 let counter = 1
@@ -45,6 +60,14 @@ function BillJobWrapper({ jobs, onBack }) {
   const job = jobs.find(j => j.id === id)
   if (!job) return <div style={{ padding: 40, textAlign: 'center' }}>Job not found...</div>
   return <BillingScreen job={job} onBack={onBack} />
+}
+
+function ProtectedRoute({ dataLoaded, children }) {
+  const location = useLocation()
+  if (!dataLoaded) {
+    return <Navigate to="/loading" replace state={{ redirectTo: location.pathname }} />
+  }
+  return children
 }
 
 // ── APP ──────────────────────────────────────────────────────
@@ -72,15 +95,11 @@ export default function App() {
 
   useEffect(() => {
     const role = localStorage.getItem('jw_auth_role')
-    const publicPaths = ['/', '/login', '/loading']
 
-    // Redirect unauthenticated users or users with unloaded data to appropriate initial setup
-    if (!role && !publicPaths.includes(location.pathname)) {
+    if (!role && location.pathname !== '/' && location.pathname !== '/login' && location.pathname !== '/loading') {
       navigate('/login', { replace: true })
-    } else if (role && !dataLoaded && !publicPaths.includes(location.pathname)) {
-      navigate('/loading', { replace: true, state: { redirectTo: location.pathname } })
     }
-  }, [dataLoaded, location.pathname, navigate])
+  }, [location.pathname, navigate])
 
   async function loadData() {
     setError(null)
@@ -219,7 +238,7 @@ export default function App() {
 }
 
   return (
-    <>
+    <ErrorBoundary>
       <style>{`
         body { background: #050505; color: #fff; }
         #root {
@@ -265,9 +284,8 @@ export default function App() {
           }} />
         } />
 
-        {dataLoaded && (
-          <>
-            <Route path="/dashboard" element={
+        <Route path="/dashboard" element={
+          <ProtectedRoute dataLoaded={dataLoaded}>
               <JobList
                 onNew={() => navigate('/jobs/new')}
                 onEdit={(job) => {
@@ -282,19 +300,32 @@ export default function App() {
                 onScreen={(s) => navigate(`/${s}`)}
                 onLogout={handleLogout}
               />
-            } />
-            <Route path="/jobs/new" element={
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/jobs/new" element={
+          <ProtectedRoute dataLoaded={dataLoaded}>
               <JobCardForm initialData={null} onSave={(f, v) => saveJob(f, v, null)} onBack={() => navigate('/dashboard')} mechanics={mechanics} isManager={isManager} />
-            } />
-            <Route path="/jobs/:id/edit" element={
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/jobs/:id/edit" element={
+          <ProtectedRoute dataLoaded={dataLoaded}>
               <EditJobWrapper jobs={jobs} onSave={saveJob} onBack={() => navigate('/dashboard')} mechanics={mechanics} isManager={isManager} />
-            } />
-            <Route path="/jobs/:id/bill" element={
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/jobs/:id/bill" element={
+          <ProtectedRoute dataLoaded={dataLoaded}>
               <BillJobWrapper jobs={jobs} onBack={() => navigate('/dashboard')} />
-            } />
-            <Route path="/history" element={<CustomerHistory onBack={() => navigate('/dashboard')} />} />
-            <Route path="/reports" element={<RevenueReports onBack={() => navigate('/dashboard')} />} />
-            <Route path="/manager" element={
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/history" element={<ProtectedRoute dataLoaded={dataLoaded}><CustomerHistory onBack={() => navigate('/dashboard')} /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute dataLoaded={dataLoaded}><RevenueReports onBack={() => navigate('/dashboard')} /></ProtectedRoute>} />
+        
+        <Route path="/manager" element={
+          <ProtectedRoute dataLoaded={dataLoaded}>
               <ManagerDashboard
                 jobs={jobs}
                 mechanics={mechanics}
@@ -303,12 +334,11 @@ export default function App() {
                 onBill={(job) => navigate(`/jobs/${job.id}/bill`)}
                 onBack={() => navigate('/dashboard')}
               />
-            } />
-          </>
-        )}
+          </ProtectedRoute>
+        } />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </ErrorBoundary>
   )
 }

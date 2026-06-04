@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, memo, useCallback } from 'react'
 import { supabase } from './supabase'
 import jwLogo from './assets/jjw.svg'
 import { STATUS, fromDb, PhotoViewer } from './shared'
@@ -67,24 +67,32 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
   }
 
   useEffect(() => { loadStats() }, [])
-  useEffect(() => { setPage(1); loadJobs(1, true) }, [filter, searchQuery])
+  
+  // Fetch jobs when filter/search changes (debounced by 300ms)
+  useEffect(() => { 
+    const timer = setTimeout(() => {
+      setPage(1); loadJobs(1, true) 
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [filter, searchQuery])
+
   useEffect(() => { if (page > 1) loadJobs(page) }, [page])
 
-  async function handleLocalStatusChange(id, status) {
+  const handleLocalStatusChange = useCallback(async (id, status) => {
     const success = await onStatusChange(id, status)
     if (success) {
       setServerJobs(p => p.map(j => j.id === id ? { ...j, status } : j))
       loadStats()
     }
-  }
+  }, [onStatusChange])
 
-  async function handleLocalDelete(job) {
+  const handleLocalDelete = useCallback(async (job) => {
     const success = await onDelete(job)
     if (success) {
       setServerJobs(p => p.filter(j => j.id !== job.id))
       loadStats()
     }
-  }
+  }, [onDelete])
 
 
   // Setup the IntersectionObserver for infinite scrolling
@@ -212,7 +220,7 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
  * Renders an individual job card row in the dashboard list.
  * @returns {JSX.Element} The job row component.
  */
-function JobRow({ job, onEdit, onBill, onDelete, onStatusChange, isManager }) {
+const JobRow = memo(function JobRow({ job, onEdit, onBill, onDelete, onStatusChange, isManager }) {
   const [expanded, setExpanded] = useState(false)
   const [viewing, setViewing]   = useState(null)
   const sc       = STATUS[job.status] || STATUS['Waiting']
@@ -321,4 +329,4 @@ function JobRow({ job, onEdit, onBill, onDelete, onStatusChange, isManager }) {
       {viewing && <PhotoViewer photo={viewing} onClose={() => setViewing(null)} />}
     </div>
   )
-}
+})
