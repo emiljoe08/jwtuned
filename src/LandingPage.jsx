@@ -347,9 +347,9 @@ export default function LandingPage({ onEnter }) {
             </div>
 
             <h1 className="fade-up d2" style={{ fontSize:'clamp(46px,8.5vw,84px)', fontWeight:900, lineHeight:1.0, letterSpacing:'-2px', marginBottom:22 }}>
-              EXPERT<br />
-              <em style={{ fontStyle:'italic', color:'#E8310A' }}>CAR & BIKE</em><br />
-              SERVICE.
+              YOUR<br />
+              <em style={{ fontStyle:'italic', color:'#E8310A' }}>PERFORMANCE</em><br />
+              PARTNER.
             </h1>
 
             <p className="fade-up d3" style={{ fontSize:'clamp(15px,1.8vw,18px)', color:'rgba(255,255,255,0.85)', lineHeight:1.75, maxWidth:460, marginBottom:36 }}>
