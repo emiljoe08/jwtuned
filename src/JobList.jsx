@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, memo, useCallback } from 'react'
 import { supabase } from './supabase'
 import jwLogo from './assets/jjw.svg'
 import { STATUS, fromDb, PhotoViewer } from './shared'
+import { saveJobsToCache, loadJobsFromCache, getCacheTimestamp } from './offlineCache'
 
 /**
  * Renders the dashboard list of job cards, including statistics and filters.
@@ -20,19 +21,47 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
   const [error, setError] = useState(null)
   const [hasMore, setHasMore] = useState(false)
   const [stats, setStats] = useState({ total: 0, waiting: 0, inProgress: 0, ready: 0 })
+  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+  const [cacheTime, setCacheTime] = useState(null)
+
+  // Track online/offline status
+  useEffect(() => {
+    const goOnline = () => { setIsOffline(false); handleRefresh() }
+    const goOffline = () => setIsOffline(true)
+    window.addEventListener('online', goOnline)
+    window.addEventListener('offline', goOffline)
+    return () => {
+      window.removeEventListener('online', goOnline)
+      window.removeEventListener('offline', goOffline)
+    }
+  }, [])
 
 
   async function loadStats() {
-    const getCount = async (status) => {
-      let q = supabase.from('jobs').select('id', { count: 'exact', head: true })
-      if (status !== 'All') q = q.eq('status', status)
-      const { count } = await q
-      return count || 0
+    try {
+      const getCount = async (status) => {
+        let q = supabase.from('jobs').select('id', { count: 'exact', head: true })
+        if (status !== 'All') q = q.eq('status', status)
+        const { count } = await q
+        return count || 0
+      }
+      const [total, waiting, inProgress, ready] = await Promise.all([
+        getCount('All'), getCount('Waiting'), getCount('In Progress'), getCount('Ready')
+      ])
+      setStats({ total, waiting, inProgress, ready })
+    } catch {
+      // Offline — derive stats from cached data
+      const cached = await loadJobsFromCache()
+      if (cached.length > 0) {
+        const mapped = cached.map(fromDb)
+        setStats({
+          total: mapped.length,
+          waiting: mapped.filter(j => j.status === 'Waiting').length,
+          inProgress: mapped.filter(j => j.status === 'In Progress').length,
+          ready: mapped.filter(j => j.status === 'Ready').length,
+        })
+      }
     }
-    const [total, waiting, inProgress, ready] = await Promise.all([
-      getCount('All'), getCount('Waiting'), getCount('In Progress'), getCount('Ready')
-    ])
-    setStats({ total, waiting, inProgress, ready })
   }
 
   async function loadJobs(currentPage, isReset = false) {
@@ -49,13 +78,40 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
     const to = from + PAGE_SIZE - 1
     q = q.order('created_at', { ascending: false }).range(from, to)
     
-    const { data, count, error: fetchError } = await q
-    if (fetchError) {
-      setError(fetchError.message)
-    } else {
+    try {
+      const { data, count, error: fetchError } = await q
+      if (fetchError) throw fetchError
+
       const mapped = (data || []).map(fromDb)
       setServerJobs(prev => isReset ? mapped : [...prev, ...mapped])
       setHasMore(to < (count - 1))
+      setIsOffline(false)
+
+      // Persist full unfiltered page-1 data to IndexedDB
+      if (isReset && filter === 'All' && !searchQuery.trim()) {
+        saveJobsToCache(data || [])
+      }
+    } catch (fetchError) {
+      // Network/Supabase failure → try IndexedDB cache
+      const cached = await loadJobsFromCache()
+      if (cached.length > 0) {
+        let filtered = cached.map(fromDb)
+        if (filter !== 'All') filtered = filtered.filter(j => j.status === filter)
+        if (searchQuery.trim()) {
+          const sq = searchQuery.trim().toLowerCase()
+          filtered = filtered.filter(j =>
+            j.customerName?.toLowerCase().includes(sq) ||
+            j.regNumber?.toLowerCase().includes(sq)
+          )
+        }
+        setServerJobs(filtered)
+        setHasMore(false)
+        setIsOffline(true)
+        const ts = await getCacheTimestamp()
+        setCacheTime(ts)
+      } else {
+        setError(fetchError.message || 'Network error — no cached data available.')
+      }
     }
     setLoading(false)
   }
@@ -112,6 +168,16 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
     }
   }, [hasMore])
 
+  // Format relative time for offline banner
+  function formatTimeAgo(isoStr) {
+    if (!isoStr) return ''
+    const diff = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000)
+    if (diff < 60) return 'just now'
+    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`
+    return `${Math.floor(diff / 86400)} day(s) ago`
+  }
+
   return (
     <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#050505' }}>
       <style>{`
@@ -122,7 +188,34 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
           .joblist-header { flex-direction: column; align-items: flex-start; }
           .joblist-actions { width: 100%; justify-content: flex-start; }
         }
+        @keyframes offlinePulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
       `}</style>
+
+      {/* ── Offline Banner ── */}
+      {isOffline && serverJobs.length > 0 && (
+        <div style={{
+          background: 'rgba(245,158,11,0.12)',
+          borderBottom: '1px solid rgba(245,158,11,0.25)',
+          padding: '10px 5%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}>
+          <span style={{ fontSize: 16, animation: 'offlinePulse 2s ease-in-out infinite' }}>📡</span>
+          <div>
+            <div style={{ color: '#FCD34D', fontSize: 13, fontWeight: 600 }}>Offline — showing cached jobs</div>
+            {cacheTime && (
+              <div style={{ color: 'rgba(252,211,77,0.6)', fontSize: 11, marginTop: 1 }}>
+                Last synced {formatTimeAgo(cacheTime)}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '20px 5% 24px' }}>
         <div className="joblist-header">
           <div>

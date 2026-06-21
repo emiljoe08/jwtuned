@@ -12,7 +12,9 @@ import BillingScreen from './BillingScreen'
 import JobList from './JobList'
 import JobCardForm from './JobCardForm'
 import CustomerHistory from './CustomerHistory'
+import InstallPrompt from './InstallPrompt'
 import { toDb, fromDb } from './shared'
+import { saveJobsToCache, loadJobsFromCache, saveMechanicsToCache, loadMechanicsFromCache } from './offlineCache'
 
 
 
@@ -103,18 +105,37 @@ export default function App() {
 
   async function loadData() {
     setError(null)
-    const [jobsRes, mechRes] = await Promise.all([
-      supabase.from('jobs').select('*').order('created_at', { ascending: false }),
-      supabase.from('mechanics').select('*').order('name')
-    ])
-    if (jobsRes.error) { setError('Could not load jobs.'); console.error(jobsRes.error) }
-    else {
+    try {
+      const [jobsRes, mechRes] = await Promise.all([
+        supabase.from('jobs').select('*').order('created_at', { ascending: false }),
+        supabase.from('mechanics').select('*').order('name')
+      ])
+      if (jobsRes.error) throw jobsRes.error
+
       const fetchedJobs = jobsRes.data || []
       setJobs(fetchedJobs.map(fromDb))
       const nums = fetchedJobs.map(r => parseInt(r.id?.split('-')[2])).filter(n => !isNaN(n))
       counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
+
+      if (mechRes.data) setMechanics(mechRes.data)
+
+      // Persist to IndexedDB for offline access
+      saveJobsToCache(fetchedJobs)
+      if (mechRes.data) saveMechanicsToCache(mechRes.data)
+    } catch (err) {
+      console.warn('[App] Network load failed, trying offline cache:', err)
+      // Fall back to IndexedDB
+      const cachedJobs = await loadJobsFromCache()
+      const cachedMechanics = await loadMechanicsFromCache()
+      if (cachedJobs.length > 0) {
+        setJobs(cachedJobs.map(fromDb))
+        const nums = cachedJobs.map(r => parseInt(r.id?.split('-')[2])).filter(n => !isNaN(n))
+        counter = nums.length > 0 ? Math.max(...nums) + 1 : 1
+      } else {
+        setError('Could not load jobs and no offline cache is available.')
+      }
+      if (cachedMechanics.length > 0) setMechanics(cachedMechanics)
     }
-    if (mechRes.data) setMechanics(mechRes.data)
     setDataLoaded(true)
   }
 
@@ -239,6 +260,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      <InstallPrompt />
       <style>{`
         body { background: #050505; color: #fff; }
         #root {
