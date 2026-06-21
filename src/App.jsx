@@ -16,6 +16,7 @@ import InstallPrompt from './InstallPrompt'
 import InspectionChecklist from './InspectionChecklist'
 import FeedbackScreen from './FeedbackScreen'
 import ServiceReminders from './ServiceReminders'
+import VehiclePassport from './VehiclePassport'
 import { toDb, fromDb } from './shared'
 import { saveJobsToCache, loadJobsFromCache, saveMechanicsToCache, loadMechanicsFromCache } from './offlineCache'
 
@@ -377,6 +378,7 @@ export default function App() {
         <Route path="/history" element={<ProtectedRoute dataLoaded={dataLoaded}><CustomerHistory onBack={() => navigate('/dashboard')} /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute dataLoaded={dataLoaded}><RevenueReports onBack={() => navigate('/dashboard')} /></ProtectedRoute>} />
         <Route path="/reminders" element={<ProtectedRoute dataLoaded={dataLoaded}><ServiceReminders onBack={() => navigate('/dashboard')} /></ProtectedRoute>} />
+        <Route path="/passport/:regNumber" element={<VehiclePassport />} />
         
         <Route path="/manager" element={
           <ProtectedRoute dataLoaded={dataLoaded}>

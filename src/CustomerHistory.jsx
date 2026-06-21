@@ -123,12 +123,34 @@ export default function CustomerHistory({ onBack }) {
                   <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', marginBottom:2 }}>{selected.makeModel}</div>
                   <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)' }}>{selected.customerName} · {selected.phone}</div>
                 </div>
-                <button
-                  onClick={() => sendReminder(selected)}
-                  style={{ background:'rgba(37,211,102,0.1)', border:'1px solid rgba(37,211,102,0.3)', color:'#25D366', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', flexShrink:0, display:'flex', alignItems:'center', gap:6 }}
-                >
-                  💬 Send Reminder
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                  <button
+                    onClick={() => sendReminder(selected)}
+                    style={{ background:'rgba(37,211,102,0.1)', border:'1px solid rgba(37,211,102,0.3)', color:'#25D366', borderRadius:10, padding:'8px 14px', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6, width: '100%', justifyContent: 'center' }}
+                  >
+                    💬 Send Reminder
+                  </button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => window.open(`/passport/${selected.regNumber.replace(/[^A-Za-z0-9]/g, '')}`, '_blank')}
+                      style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.15)', color:'#fff', borderRadius:10, padding:'8px 12px', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}
+                    >
+                      🎫 Passport
+                    </button>
+                    <button
+                      onClick={() => {
+                        const cleanReg = selected.regNumber.replace(/[^A-Za-z0-9]/g, '')
+                        const passportUrl = `${window.location.origin}/passport/${cleanReg}`
+                        const msg = `Hello ${selected.customerName} 👋\n\nHere is your Digital Vehicle Passport showing the complete service history for your vehicle *${selected.regNumber}* (${selected.makeModel}):\n${passportUrl}\n\nJW Tuned, Kottayam 🔧`
+                        const cleanPhone = selected.phone ? selected.phone.replace(/\D/g, '') : ''
+                        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank')
+                      }}
+                      style={{ background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}
+                    >
+                      💬 Share Log
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div style={{ padding:'16px' }}>
