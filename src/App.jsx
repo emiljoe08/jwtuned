@@ -14,6 +14,7 @@ import JobCardForm from './JobCardForm'
 import CustomerHistory from './CustomerHistory'
 import InstallPrompt from './InstallPrompt'
 import InspectionChecklist from './InspectionChecklist'
+import FeedbackScreen from './FeedbackScreen'
 import { toDb, fromDb } from './shared'
 import { saveJobsToCache, loadJobsFromCache, saveMechanicsToCache, loadMechanicsFromCache } from './offlineCache'
 
@@ -246,6 +247,16 @@ export default function App() {
   async function updateStatus(id, status) {
     const { error } = await supabase.from('jobs').update({ status }).eq('id', id)
     if (error) { alert('Error: ' + error.message); return false }
+    
+    // Auto-send WhatsApp message on status change to 'Delivered'
+    const job = jobs.find(j => j.id === id)
+    if (job && status === 'Delivered') {
+      const feedbackUrl = `${window.location.origin}/feedback/${job.id}`
+      const msg = `Hello ${job.customerName} 👋\n\nYour vehicle *${job.regNumber}* (${job.makeModel}) has been delivered! 🎉\n\nWe hope you had a great experience with JW Tuned. Please take 10 seconds to share your feedback and rate us (1-5 stars) here:\n${feedbackUrl}\n\nThank you! 🔧`
+      const phoneClean = job.phone ? job.phone.replace(/\D/g, '') : ''
+      window.open(`https://wa.me/${phoneClean}?text=${encodeURIComponent(msg)}`, '_blank')
+    }
+
     setJobs(p => p.map(j => j.id === id ? { ...j, status } : j))
     return true
   }
@@ -378,6 +389,7 @@ export default function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/feedback/:id" element={<FeedbackScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ErrorBoundary>

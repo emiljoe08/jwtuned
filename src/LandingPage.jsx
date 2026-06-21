@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import jwLogo from './assets/jjw.svg'
 import BookingForm from './BookingForm'
+import { supabase } from './supabase'
 
 /** Returns an SVG icon for WhatsApp. */
 const WhatsAppIcon = () => (
@@ -164,12 +165,41 @@ export default function LandingPage({ onEnter }) {
     { value: '100%', label: 'Genuine Parts' },
   ]
 
+  const [dbTestimonials, setDbTestimonials] = useState([])
+
+  useEffect(() => {
+    async function fetchTestimonials() {
+      try {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('customer_name, make_model, inspection')
+          .not('inspection', 'is', null)
+        
+        if (data) {
+          const loaded = data
+            .filter(j => j.inspection && j.inspection.feedback)
+            .map(j => ({
+              name: j.customer_name,
+              text: j.inspection.feedback.comment || 'Excellent service!',
+              vehicle: j.make_model,
+              rating: '⭐'.repeat(j.inspection.feedback.rating)
+            }))
+          setDbTestimonials(loaded)
+        }
+      } catch (err) {
+        console.warn("Failed to fetch dynamic testimonials:", err)
+      }
+    }
+    fetchTestimonials()
+  }, [])
+
   const testimonials = [
     { name: 'Rahul S.', text: 'Best workshop in Kottayam! They kept me updated on WhatsApp with photos. Very transparent.', vehicle: 'Honda City', rating: '⭐⭐⭐⭐⭐' },
     { name: 'Kiran V.', text: 'Quick and professional service. The mechanics really know what they are doing. Highly recommended.', vehicle: 'Royal Enfield Classic 350', rating: '⭐⭐⭐⭐⭐' },
     { name: 'Anoop T.', text: 'Genuine parts and no hidden charges. The itemised billing is something you rarely see around here.', vehicle: 'Maruti Swift', rating: '⭐⭐⭐⭐⭐' }
   ]
-  const marqueeTestimonials = [...testimonials, ...testimonials, ...testimonials, ...testimonials]
+  const combinedTestimonials = [...dbTestimonials, ...testimonials]
+  const marqueeTestimonials = [...combinedTestimonials, ...combinedTestimonials, ...combinedTestimonials, ...combinedTestimonials]
 
   return (
     <div style={{ background: '#0A0A0A', color: '#fff', fontFamily: "'Barlow', 'Segoe UI', sans-serif", overflowX: 'hidden' }}>
