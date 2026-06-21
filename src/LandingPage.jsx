@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import jwLogo from './assets/jjw.svg'
+import BookingForm from './BookingForm'
 
 /** Returns an SVG icon for WhatsApp. */
 const WhatsAppIcon = () => (
@@ -253,11 +254,11 @@ export default function LandingPage({ onEnter }) {
           <img src={jwLogo} alt="JW Tuned" style={{ height:38, objectFit:'contain' }} />
         </div>
         <div className="desktop-nav" style={{ display:'flex', alignItems:'center', gap:28 }}>
-          {['#services','#process','#about','#testimonials','#faq','#contact'].map((href,i) => (
-            <a key={href} href={href} className="nav-link">{['Services','Process','About','Reviews','FAQ','Contact'][i]}</a>
+          {['#services','#process','#book','#about','#testimonials','#faq','#contact'].map((href,i) => (
+            <a key={href} href={href} className="nav-link">{['Services','Process','Book','About','Reviews','FAQ','Contact'][i]}</a>
           ))}
           <a href="https://www.instagram.com/jw_tuned" target="_blank" rel="noreferrer" className="nav-link"><InstagramIcon /></a>
-          <a href="tel:+919447403837" className="btn-red" style={{ padding:'9px 18px', fontSize:13 }}>📞 Book Now</a>
+          <a href="#book" className="btn-red" style={{ padding:'9px 18px', fontSize:13 }}>📅 Book Now</a>
           <a href="/dashboard" target="_blank" rel="noopener noreferrer" style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', fontSize:12, cursor:'pointer', fontFamily:'inherit', textDecoration:'none' }}>Staff →</a>
         </div>
         <button className="mobile-btn" onClick={() => setMenuOpen(!menuOpen)} style={{ background:'none', border:'none', color:'#fff', fontSize:22, cursor:'pointer', display:'flex', alignItems:'center' }}>
@@ -268,13 +269,13 @@ export default function LandingPage({ onEnter }) {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="mobile-menu" style={{ position:'fixed', top:68, inset:'68px 0 0', background:'#0A0A0A', zIndex:199, padding:'32px 24px', display:'flex', flexDirection:'column', gap:4, overflowY:'auto' }}>
-          {['#services','#process','#about','#testimonials','#faq','#contact'].map((href,i) => (
+          {['#services','#process','#book','#about','#testimonials','#faq','#contact'].map((href,i) => (
             <a key={href} href={href} onClick={() => setMenuOpen(false)} style={{ color:'#fff', textDecoration:'none', fontSize:26, fontWeight:800, padding:'12px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', letterSpacing:'-0.3px' }}>
-              {['Services','Process','About','Reviews','FAQ','Contact'][i]}
+              {['Services','Process','Book','About','Reviews','FAQ','Contact'][i]}
             </a>
           ))}
           <div style={{ display:'flex', gap:12, marginTop:24, flexDirection:'column' }}>
-            <a href="tel:+919447403837" className="btn-red" style={{ justifyContent:'center' }}>📞 Book a Service</a>
+            <a href="#book" onClick={() => setMenuOpen(false)} className="btn-red" style={{ justifyContent:'center' }}>📅 Book a Service</a>
             <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" className="btn-ghost" style={{ justifyContent:'center' }}><WhatsAppIcon /> WhatsApp</a>
             <button onClick={() => { setMenuOpen(false); onEnter() }} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', fontSize:13, cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>Staff Portal →</button>
           </div>
@@ -357,8 +358,8 @@ export default function LandingPage({ onEnter }) {
             </p>
 
             <div className="fade-up d4 hero-actions" style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
-              <a href="tel:+919447403837" className="btn-red" style={{ fontSize:15, padding:'16px 32px', animation:'pulse3d 3s ease infinite' }}>
-                📞 Book a Service
+              <a href="#book" className="btn-red" style={{ fontSize:15, padding:'16px 32px', animation:'pulse3d 3s ease infinite' }}>
+                📅 Book a Service
               </a>
               <a href="https://wa.me/919447403837" target="_blank" rel="noreferrer" className="btn-ghost" style={{ fontSize:15, padding:'15px 32px' }}>
                 <WhatsAppIcon /> WhatsApp Us
@@ -420,7 +421,7 @@ export default function LandingPage({ onEnter }) {
                   <div style={{ fontSize:36, marginBottom:16 }}>{s.icon}</div>
                   <h3 style={{ fontSize:17, fontWeight:800, marginBottom:10, letterSpacing:'-0.3px' }}>{s.title}</h3>
                   <p style={{ fontSize:13, color:'rgba(255,255,255,0.8)', lineHeight:1.7, marginBottom:16 }}>{s.desc}</p>
-                  <a href="tel:+919447403837" className="btn-red" style={{ fontSize:12, padding:'9px 16px' }}>Book Now →</a>
+                  <a href="#book" className="btn-red" style={{ fontSize:12, padding:'9px 16px' }}>Book Now →</a>
                 </div>
               </TiltCard>
             ))}
@@ -504,6 +505,25 @@ export default function LandingPage({ onEnter }) {
                 </div>
               </TiltCard>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── BOOK A SERVICE ── */}
+      <div id="book" style={{ background:'#0F0F0F', borderTop:'1px solid rgba(255,255,255,0.05)', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'clamp(60px,8vw,100px) 5%', position:'relative', overflow:'hidden' }}>
+        <div style={{ position:'absolute', top:'-15%', right:'-10%', width:500, height:500, background:'radial-gradient(circle, rgba(232,49,10,0.06) 0%, transparent 70%)', pointerEvents:'none' }} />
+        <div style={{ margin:'0 auto', width:'100%', maxWidth: 680, position:'relative' }}>
+          <div style={{ marginBottom:40, textAlign:'center' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#E8310A', letterSpacing:'0.15em', textTransform:'uppercase', marginBottom:12 }}>// Book Online</div>
+            <h2 style={{ fontSize:'clamp(28px,5vw,48px)', fontWeight:900, letterSpacing:'-1.5px', lineHeight:1.05, marginBottom:12 }}>
+              BOOK YOUR<br /><em style={{ fontStyle:'italic', color:'#E8310A' }}>SERVICE SLOT</em>
+            </h2>
+            <p style={{ fontSize:15, color:'rgba(255,255,255,0.7)', maxWidth:420, margin:'0 auto', lineHeight:1.7 }}>
+              Pick a date and time — we'll confirm your slot and get your vehicle sorted.
+            </p>
+          </div>
+          <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16, padding:'clamp(24px,4vw,40px)' }}>
+            <BookingForm />
           </div>
         </div>
       </div>
