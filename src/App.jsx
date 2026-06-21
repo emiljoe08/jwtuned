@@ -13,6 +13,7 @@ import JobList from './JobList'
 import JobCardForm from './JobCardForm'
 import CustomerHistory from './CustomerHistory'
 import InstallPrompt from './InstallPrompt'
+import InspectionChecklist from './InspectionChecklist'
 import { toDb, fromDb } from './shared'
 import { saveJobsToCache, loadJobsFromCache, saveMechanicsToCache, loadMechanicsFromCache } from './offlineCache'
 
@@ -62,6 +63,13 @@ function BillJobWrapper({ jobs, onBack }) {
   const job = jobs.find(j => j.id === id)
   if (!job) return <div style={{ padding: 40, textAlign: 'center' }}>Job not found...</div>
   return <BillingScreen job={job} onBack={onBack} />
+}
+
+function InspectJobWrapper({ jobs, onSave, onBack }) {
+  const { id } = useParams()
+  const job = jobs.find(j => j.id === id)
+  if (!job) return <div style={{ padding: 40, textAlign: 'center' }}>Job not found...</div>
+  return <InspectionChecklist job={job} onSave={onSave} onBack={onBack} />
 }
 
 function ProtectedRoute({ dataLoaded, children }) {
@@ -258,6 +266,10 @@ export default function App() {
   setJobs(p => p.map(j => j.id === jobId ? { ...j, mechanic: mechanicName } : j))
 }
 
+  function saveInspection(jobId, inspection) {
+    setJobs(p => p.map(j => j.id === jobId ? { ...j, inspection } : j))
+  }
+
   return (
     <ErrorBoundary>
       <InstallPrompt />
@@ -315,6 +327,7 @@ export default function App() {
                   navigate(`/jobs/${job.id}/edit`)
                 }}
                 onBill={(job) => navigate(`/jobs/${job.id}/bill`)}
+                onInspect={(job) => navigate(`/jobs/${job.id}/inspect`)}
                 onDelete={deleteJob}
                 onStatusChange={updateStatus}
                 isManager={isManager}
@@ -340,6 +353,12 @@ export default function App() {
         <Route path="/jobs/:id/bill" element={
           <ProtectedRoute dataLoaded={dataLoaded}>
               <BillJobWrapper jobs={jobs} onBack={() => navigate('/dashboard')} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/jobs/:id/inspect" element={
+          <ProtectedRoute dataLoaded={dataLoaded}>
+              <InspectJobWrapper jobs={jobs} onSave={saveInspection} onBack={() => navigate('/dashboard')} />
           </ProtectedRoute>
         } />
         

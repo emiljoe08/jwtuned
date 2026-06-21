@@ -8,7 +8,7 @@ import { saveJobsToCache, loadJobsFromCache, getCacheTimestamp } from './offline
  * Renders the dashboard list of job cards, including statistics and filters.
  * @returns {JSX.Element} The job list screen component.
  */
-export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChange, isManager, onManagerView, onScreen, onLogout }) {
+export default function JobList({ onNew, onEdit, onBill, onInspect, onDelete, onStatusChange, isManager, onManagerView, onScreen, onLogout }) {
   const [filter, setFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
@@ -294,7 +294,7 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
           </div>
         )}
         {serverJobs.map(job => (
-          <JobRow key={job.id} job={job} onEdit={onEdit} onBill={onBill} onDelete={handleLocalDelete} onStatusChange={handleLocalStatusChange} isManager={isManager} />
+          <JobRow key={job.id} job={job} onEdit={onEdit} onBill={onBill} onInspect={onInspect} onDelete={handleLocalDelete} onStatusChange={handleLocalStatusChange} isManager={isManager} />
         ))}
         {!loading && hasMore && (
           <div 
@@ -313,7 +313,7 @@ export default function JobList({ onNew, onEdit, onBill, onDelete, onStatusChang
  * Renders an individual job card row in the dashboard list.
  * @returns {JSX.Element} The job row component.
  */
-const JobRow = memo(function JobRow({ job, onEdit, onBill, onDelete, onStatusChange, isManager }) {
+const JobRow = memo(function JobRow({ job, onEdit, onBill, onInspect, onDelete, onStatusChange, isManager }) {
   const [expanded, setExpanded] = useState(false)
   const [viewing, setViewing]   = useState(null)
   const sc       = STATUS[job.status] || STATUS['Waiting']
@@ -338,6 +338,7 @@ const JobRow = memo(function JobRow({ job, onEdit, onBill, onDelete, onStatusCha
           <span style={{ background: sc.bg, color: sc.color, padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot }} />{job.status}
           </span>
+          {job.inspection && <span style={{ fontSize: 10, color: '#6EE7B7', fontWeight: 600 }}>✅ Inspected</span>}
           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{job.id}</span>
         </div>
       </div>
@@ -412,9 +413,10 @@ const JobRow = memo(function JobRow({ job, onEdit, onBill, onDelete, onStatusCha
             </div>
           </div>
 
-          {/* 2 action buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 14px 14px' }}>
+          {/* 3 action buttons */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '0 14px 14px' }}>
   <button onClick={() => onEdit(job)} disabled={isDeliveredAndNotManager} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.03)', fontSize: 12, fontWeight: 600, cursor: isDeliveredAndNotManager ? 'not-allowed' : 'pointer', color: '#fff', opacity: isDeliveredAndNotManager ? 0.4 : 1 }}>✏️ Edit</button>
+  <button onClick={() => onInspect(job)} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#93C5FD' }}>{job.inspection ? '✅ Inspect' : '🔍 Inspect'}</button>
   <button onClick={() => onDelete(job)} disabled={isDeliveredAndNotManager} style={{ height: 40, borderRadius: 10, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.1)', fontSize: 12, fontWeight: 600, cursor: isDeliveredAndNotManager ? 'not-allowed' : 'pointer', color: '#F87171', opacity: isDeliveredAndNotManager ? 0.4 : 1 }}>🗑️ Del</button>
 </div>
         </div>

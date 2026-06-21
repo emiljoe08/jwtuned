@@ -22,6 +22,7 @@ export function toDb(form, vehicleType, id) {
     delivery_time: form.deliveryTime,
     status: form.status,
     photos: form.photos || [],
+    inspection: form.inspection || null,
   }
 }
 
@@ -42,6 +43,7 @@ export function fromDb(row) {
     deliveryTime: row.delivery_time,
     status: row.status,
     photos: row.photos || [],
+    inspection: row.inspection || null,
   }
 }
 
