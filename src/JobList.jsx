@@ -400,16 +400,17 @@ const JobRow = memo(function JobRow({ job, onEdit, onBill, onInspect, onDelete, 
           <div style={{ padding: '0 14px 12px' }}>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Update status</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {statuses.map(s => {
-                const active = job.status === s
-                const c = STATUS[s]
-                const disabled = s === 'Delivered' && !isManager && !active
-                return (
-                  <button key={s} disabled={disabled} onClick={() => onStatusChange(job.id, s)} style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: `1px solid ${active ? c.dot : 'rgba(255,255,255,0.1)'}`, fontSize: 10, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', background: active ? c.bg : 'rgba(255,255,255,0.03)', color: active ? c.color : 'rgba(255,255,255,0.5)', opacity: disabled ? 0.4 : 1 }}>
-                    {s === 'In Progress' ? 'Active' : s}
-                  </button>
-                )
-              })}
+              {statuses
+                .filter(s => isManager || s !== 'Delivered')
+                .map(s => {
+                  const active = job.status === s
+                  const c = STATUS[s]
+                  return (
+                    <button key={s} onClick={() => onStatusChange(job.id, s)} style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: `1px solid ${active ? c.dot : 'rgba(255,255,255,0.1)'}`, fontSize: 10, fontWeight: 600, cursor: 'pointer', background: active ? c.bg : 'rgba(255,255,255,0.03)', color: active ? c.color : 'rgba(255,255,255,0.5)' }}>
+                      {s === 'In Progress' ? 'Active' : s}
+                    </button>
+                  )
+                })}
             </div>
           </div>
 
