@@ -297,7 +297,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <InstallPrompt />
+      {dataLoaded && <InstallPrompt />}
       <style>{`
         body { background: #050505; color: #fff; }
         #root {
