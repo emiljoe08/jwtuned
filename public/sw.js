@@ -7,7 +7,7 @@
  * 3. Everything else (fonts, images)   → stale-while-revalidate
  */
 
-const CACHE_NAME = 'jwtuned-v2'
+const CACHE_NAME = 'jwtuned-v3'
 
 // ── Minimal IndexedDB helper (runs inside the SW context) ────
 const DB_NAME = 'jw-offline'

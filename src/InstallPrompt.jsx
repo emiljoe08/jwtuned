@@ -21,11 +21,11 @@ export default function InstallPrompt({ isLoggedIn }) {
     if (navigator.standalone) return // Safari iOS
 
     // Recently dismissed — don't nag
-    const dismissed = localStorage.getItem(DISMISS_KEY)
-    if (dismissed) {
-      const diff = Date.now() - Number(dismissed)
-      if (diff < DISMISS_DAYS * 24 * 60 * 60 * 1000) return
-    }
+    // const dismissed = localStorage.getItem(DISMISS_KEY)
+    // if (dismissed) {
+    //   const diff = Date.now() - Number(dismissed)
+    //   if (diff < DISMISS_DAYS * 24 * 60 * 60 * 1000) return
+    // }
 
     function onPrompt(e) {
       e.preventDefault()
