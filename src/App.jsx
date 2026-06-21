@@ -297,7 +297,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      {dataLoaded && <InstallPrompt />}
+      <InstallPrompt isLoggedIn={dataLoaded} />
       <style>{`
         body { background: #050505; color: #fff; }
         #root {

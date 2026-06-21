@@ -10,7 +10,7 @@ const DISMISS_DAYS = 7
  * - Remembers dismissal for 7 days via localStorage.
  * - Auto-hides when the app is already running in standalone mode.
  */
-export default function InstallPrompt() {
+export default function InstallPrompt({ isLoggedIn }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [visible, setVisible] = useState(false)
   const [installing, setInstalling] = useState(false)
@@ -56,7 +56,7 @@ export default function InstallPrompt() {
     setVisible(false)
   }
 
-  if (!visible) return null
+  if (!visible || !isLoggedIn) return null
 
   return (
     <div style={{
