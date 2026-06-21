@@ -1,4 +1,6 @@
-import { useState, memo, useCallback } from 'react'
+import { useState, useEffect, memo, useCallback } from 'react'
+import { supabase } from './supabase'
+import jwLogo from './assets/jjw.svg'
 
 const STATUS = {
   'Waiting':     { bg: 'rgba(245,158,11,0.1)', color: '#FCD34D', dot: '#F59E0B', col: '#1a1000' },
@@ -198,8 +200,104 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
 // ── KANBAN CARD ──────────────────────────────────────────────
 const KanbanCard = memo(function KanbanCard({ job, mechanics, onStatusChange, onAssign, onBill, onWhatsApp, statuses }) {
   const sc = STATUS[job.status]
+
+  // Timer States
+  const startedAt = job.inspection?.timerStartedAt
+  const duration = job.inspection?.timerExpectedDuration // in minutes
+  const isTimerActive = job.status === 'In Progress' && startedAt && duration
+
+  const [timeLeft, setTimeLeft] = useState(0)
+  const [isOvertime, setIsOvertime] = useState(false)
+  const [overtimeMs, setOvertimeMs] = useState(0)
+
+  useEffect(() => {
+    if (!isTimerActive) return
+
+    function updateTimer() {
+      const start = new Date(startedAt).getTime()
+      const end = start + duration * 60 * 1000
+      const now = Date.now()
+      const diff = end - now
+
+      if (diff <= 0) {
+        setTimeLeft(0)
+        setIsOvertime(true)
+        setOvertimeMs(now - end)
+        
+        // Trigger alert once if alertSent is not already set
+        if (!job.inspection?.timerAlertSent) {
+          triggerOvertimeAlert()
+        }
+      } else {
+        setTimeLeft(diff)
+        setIsOvertime(false)
+        setOvertimeMs(0)
+      }
+    }
+
+    async function triggerOvertimeAlert() {
+      try {
+        const updatedInspection = {
+          ...(job.inspection || {}),
+          timerAlertSent: true
+        }
+        
+        job.inspection = updatedInspection
+
+        await supabase
+          .from('jobs')
+          .update({ inspection: updatedInspection })
+          .eq('id', job.id)
+
+        // Send desktop notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('🚨 Job Timer Expired', {
+            body: `Job ${job.id} for ${job.customerName} (${job.regNumber}) has exceeded its estimated duration of ${duration} minutes.`,
+            icon: jwLogo
+          })
+        }
+
+        // WhatsApp to manager (Kottayam garage: +91 9447403837)
+        const msg = `🚨 *Timer Run Out Alert*\n\nJob Card: *${job.id}*\nCustomer: ${job.customerName}\nVehicle: ${job.regNumber} (${job.makeModel})\nMechanic: ${job.mechanic || 'Unassigned'}\n\nThis job has run over its estimated completion time of *${duration} minutes*! 🕒`
+        window.open(`https://wa.me/919447403837?text=${encodeURIComponent(msg)}`, '_blank')
+      } catch (err) {
+        console.warn("Failed to set timerAlertSent status in DB:", err)
+      }
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+    return () => clearInterval(interval)
+  }, [isTimerActive, startedAt, duration, job])
+
+  const formatTime = (ms) => {
+    const sec = Math.floor((ms / 1000) % 60)
+    const min = Math.floor((ms / (1000 * 60)) % 60)
+    const hr  = Math.floor(ms / (1000 * 60 * 60))
+    return `${hr > 0 ? String(hr).padStart(2, '0') + 'h ' : ''}${String(min).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`
+  }
+
+  const cardStyle = isOvertime
+    ? {
+        background: 'rgba(239, 68, 68, 0.05)',
+        border: '1px solid rgba(239, 68, 68, 0.4)',
+        boxShadow: '0 0 12px rgba(239, 68, 68, 0.15)',
+        borderRadius: '10px',
+        padding: '12px',
+        marginBottom: '8px',
+        transition: 'all 0.2s'
+      }
+    : {
+        background: 'rgba(255, 255, 255, 0.03)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        borderRadius: '10px',
+        padding: '12px',
+        marginBottom: '8px',
+        transition: 'all 0.2s'
+      }
+
   return (
-    <div className="kanban-card">
+    <div className="kanban-card" style={cardStyle}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
         <div style={{ fontSize: 14 }}>{job.vehicleType === '2W' ? '🏍️' : '🚗'}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -210,6 +308,33 @@ const KanbanCard = memo(function KanbanCard({ job, mechanics, onStatusChange, on
       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 8, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
         {job.complaint}
       </div>
+
+      {/* Live Countdown Timer */}
+      {isTimerActive && (
+        <div style={{
+          background: isOvertime ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)',
+          border: `1px solid ${isOvertime ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)'}`,
+          borderRadius: '6px',
+          padding: '6px 8px',
+          marginBottom: '8px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: '11px'
+        }}>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+            ⏰ {job.inspection?.jobType || 'Timer'}
+          </span>
+          <span style={{
+            fontFamily: 'monospace',
+            fontWeight: 'bold',
+            color: isOvertime ? '#EF4444' : '#6EE7B7',
+            textShadow: isOvertime ? '0 0 8px rgba(239,68,68,0.4)' : 'none'
+          }}>
+            {isOvertime ? `🚨 +${formatTime(overtimeMs)}` : `⏳ ${formatTime(timeLeft)}`}
+          </span>
+        </div>
+      )}
 
       {/* Mechanic assign */}
       <MechanicSelect job={job} mechanics={mechanics} onAssign={onAssign} />

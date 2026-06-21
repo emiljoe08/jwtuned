@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import jwLogo from './assets/jjw.svg'
-import { STATUS, PhotoViewer, Card, Field } from './shared'
+import { STATUS, PhotoViewer, Card, Field, JOB_TYPES } from './shared'
 
 const emptyForm = {
   customerName: '', phone: '', address: '',
@@ -31,6 +31,11 @@ export default function JobCardForm({ initialData, onSave, onBack, mechanics, is
   })
 
   const [saving, setSaving]           = useState(false)
+  const [jobType, setJobType]         = useState(() => {
+    const saved = localStorage.getItem(`jw_draft_jobtype_${draftId}`)
+    if (saved) return saved
+    return initialData?.inspection?.jobType || ''
+  })
   const [addingMechanic, setAddingMechanic] = useState(false)
   const [newMechanicName, setNewMechanicName] = useState('')
   const [showExitWarning, setShowExitWarning] = useState(false)
@@ -49,21 +54,38 @@ export default function JobCardForm({ initialData, onSave, onBack, mechanics, is
   useEffect(() => {
     localStorage.setItem(`jw_draft_veh_${draftId}`, vehicleType)
     localStorage.setItem(`jw_draft_form_${draftId}`, JSON.stringify(form))
-  }, [form, vehicleType, draftId])
+    localStorage.setItem(`jw_draft_jobtype_${draftId}`, jobType)
+  }, [form, vehicleType, jobType, draftId])
 
   /** Updates a specific field in the job card form data. */
   function handleChange(field, value) { setForm(p => ({ ...p, [field]: value })) }
 
   /** Validates the form data and triggers the save callback. */
   async function handleSave() {
-    if (!form.customerName || !form.phone || !form.regNumber || !form.makeModel || !form.complaint) {
-      alert('Please fill: Name, Phone, Reg. Number, Make & Model, and Complaint')
+    if (!form.customerName || !form.phone || !form.regNumber || !form.makeModel || !form.complaint || !jobType) {
+      alert('Please fill: Name, Phone, Reg. Number, Make & Model, Complaint, and Job Type')
       return
     }
     setSaving(true)
-    await onSave(form, vehicleType)
+
+    const updatedInspection = {
+      ...(form.inspection || {}),
+      jobType,
+      timerExpectedDuration: JOB_TYPES[jobType]?.duration || 120
+    }
+    if (form.status === 'In Progress' && !updatedInspection.timerStartedAt) {
+      updatedInspection.timerStartedAt = new Date().toISOString()
+    }
+
+    const finalForm = {
+      ...form,
+      inspection: updatedInspection
+    }
+
+    await onSave(finalForm, vehicleType)
     localStorage.removeItem(`jw_draft_veh_${draftId}`)
     localStorage.removeItem(`jw_draft_form_${draftId}`)
+    localStorage.removeItem(`jw_draft_jobtype_${draftId}`)
     setSaving(false)
   }
 
@@ -105,6 +127,26 @@ export default function JobCardForm({ initialData, onSave, onBack, mechanics, is
         </Card>
 
         <Card title="📋 Job Details">
+          <Field label="Job Type *">
+            <select
+              value={jobType}
+              onChange={e => {
+                const val = e.target.value
+                setJobType(val)
+                if (val && JOB_TYPES[val]) {
+                  handleChange('deliveryTime', `Estimated ${JOB_TYPES[val].label}`)
+                }
+              }}
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: 8, padding: '12px 14px', fontFamily: 'inherit', fontSize: 14, outline: 'none', width: '100%' }}
+            >
+              <option value="" style={{ background: '#1a1a1a', color: '#fff' }}>— Select Job Type —</option>
+              {Object.keys(JOB_TYPES).map(k => (
+                <option key={k} value={k} style={{ background: '#1a1a1a', color: '#fff' }}>
+                  {JOB_TYPES[k].label}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="Complaint / Work Requested *">
             <textarea rows={3} placeholder="Describe the issue..." value={form.complaint} onChange={e => handleChange('complaint', e.target.value)} />
           </Field>

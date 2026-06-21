@@ -5,6 +5,16 @@ export const STATUS = {
   'Delivered':   { bg: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', dot: 'rgba(255,255,255,0.3)' },
 }
 
+export const JOB_TYPES = {
+  'Full Service': { duration: 240, label: 'Full Service (4 hrs)' },
+  'Custom Exhausts & Headers': { duration: 180, label: 'Custom Exhausts & Headers (3 hrs)' },
+  'Custom Bodykits': { duration: 360, label: 'Custom Bodykits (6 hrs)' },
+  'Suspension & Brakes': { duration: 120, label: 'Suspension & Brakes (2 hrs)' },
+  'Two-Wheeler Service': { duration: 90, label: 'Two-Wheeler Service (1.5 hrs)' },
+  'Diagnostics': { duration: 60, label: 'Diagnostics (1 hr)' },
+  'General Repair': { duration: 120, label: 'General Repair (2 hrs)' }
+}
+
 export function toDb(form, vehicleType, id) {
   return {
     id,
