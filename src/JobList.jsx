@@ -23,6 +23,14 @@ export default function JobList({ onNew, onEdit, onBill, onInspect, onDelete, on
   const [stats, setStats] = useState({ total: 0, waiting: 0, inProgress: 0, ready: 0 })
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
   const [cacheTime, setCacheTime] = useState(null)
+  const [notifPerm, setNotifPerm] = useState(
+    'Notification' in window ? Notification.permission : 'denied'
+  )
+
+  function requestNotifications() {
+    if (!('Notification' in window)) return
+    Notification.requestPermission().then(perm => setNotifPerm(perm))
+  }
 
   // Track online/offline status
   useEffect(() => {
@@ -225,19 +233,22 @@ export default function JobList({ onNew, onEdit, onBill, onInspect, onDelete, on
             </div>
             <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 }}>Garage Management</div>
           </div>
-         <div className="joblist-actions" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-  <button onClick={handleRefresh} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', borderRadius:10, width:36, height:36, fontSize:16, cursor:'pointer' }}>↻</button>
-  {isManager && (
-    <button onClick={onManagerView} style={{ background:'rgba(232,49,10,0.1)', border:'1px solid rgba(232,49,10,0.3)', color:'#E8310A', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📊 Manager</button>
-  )}
-  {isManager && (
-    <button onClick={() => onScreen('reports')} style={{ background:'rgba(252,211,77,0.1)', border:'1px solid rgba(252,211,77,0.2)', color:'#FCD34D', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📈 Reports</button>
-  )}
-  <button onClick={() => onScreen('history')} style={{ background:'rgba(147,197,253,0.1)', border:'1px solid rgba(147,197,253,0.2)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>🔍 History</button>
-  <button onClick={() => onScreen('reminders')} style={{ background:'rgba(110,231,183,0.1)', border:'1px solid rgba(110,231,183,0.2)', color:'#6EE7B7', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>⏰ Reminders</button>
-  <button onClick={onNew} style={{ background:'#fff', color:'#050505', border:'none', borderRadius:10, padding:'8px 16px', fontWeight:600, fontSize:13, cursor:'pointer' }}>+ New Job</button>
-  <button onClick={onLogout} style={{ background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', color:'#F87171', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft: 8 }}>🚪 Logout</button>
-</div>
+          <div className="joblist-actions" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            <button onClick={handleRefresh} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', borderRadius:10, width:36, height:36, fontSize:16, cursor:'pointer' }}>↻</button>
+            {notifPerm === 'default' && (
+              <button onClick={requestNotifications} style={{ background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>🔔 Enable Notifs</button>
+            )}
+            {isManager && (
+              <button onClick={onManagerView} style={{ background:'rgba(232,49,10,0.1)', border:'1px solid rgba(232,49,10,0.3)', color:'#E8310A', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📊 Manager</button>
+            )}
+            {isManager && (
+              <button onClick={() => onScreen('reports')} style={{ background:'rgba(252,211,77,0.1)', border:'1px solid rgba(252,211,77,0.2)', color:'#FCD34D', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📈 Reports</button>
+            )}
+            <button onClick={() => onScreen('history')} style={{ background:'rgba(147,197,253,0.1)', border:'1px solid rgba(147,197,253,0.2)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>🔍 History</button>
+            <button onClick={() => onScreen('reminders')} style={{ background:'rgba(110,231,183,0.1)', border:'1px solid rgba(110,231,183,0.2)', color:'#6EE7B7', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>⏰ Reminders</button>
+            <button onClick={onNew} style={{ background:'#fff', color:'#050505', border:'none', borderRadius:10, padding:'8px 16px', fontWeight:600, fontSize:13, cursor:'pointer' }}>+ New Job</button>
+            <button onClick={onLogout} style={{ background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', color:'#F87171', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft: 8 }}>🚪 Logout</button>
+          </div>
         </div>
         <div className="stats-grid" style={{ display: 'grid', gap: 8 }}>
           {[

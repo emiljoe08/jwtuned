@@ -14,18 +14,20 @@ export default function InstallPrompt({ isLoggedIn }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [visible, setVisible] = useState(false)
   const [installing, setInstalling] = useState(false)
+  const [isIosPrompt, setIsIosPrompt] = useState(false)
 
   useEffect(() => {
     // Already installed — never show
     if (window.matchMedia('(display-mode: standalone)').matches) return
     if (navigator.standalone) return // Safari iOS
 
-    // Recently dismissed — don't nag
-    // const dismissed = localStorage.getItem(DISMISS_KEY)
-    // if (dismissed) {
-    //   const diff = Date.now() - Number(dismissed)
-    //   if (diff < DISMISS_DAYS * 24 * 60 * 60 * 1000) return
-    // }
+    // Check if it's iOS
+    const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase())
+    if (isIos) {
+      setIsIosPrompt(true)
+      setVisible(true)
+      return
+    }
 
     function onPrompt(e) {
       e.preventDefault()
@@ -117,45 +119,55 @@ export default function InstallPrompt({ isLoggedIn }) {
           </div>
         </div>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <button
-            onClick={dismiss}
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,255,255,0.5)',
-              borderRadius: 10,
-              padding: '8px 12px',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            Not now
-          </button>
-          <button
-            onClick={handleInstall}
-            disabled={installing}
-            style={{
-              background: '#E8310A',
-              border: 'none',
-              color: '#fff',
-              borderRadius: 10,
-              padding: '8px 16px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: installing ? 'wait' : 'pointer',
-              fontFamily: 'inherit',
-              animation: 'installPulse 2s infinite',
-              opacity: installing ? 0.7 : 1,
-            }}
-          >
-            {installing ? 'Installing…' : 'Install'}
-          </button>
-        </div>
+        {/* Actions or iOS Instructions */}
+        {isIosPrompt ? (
+          <div style={{ flexShrink: 0, fontSize: 12, color: 'rgba(255,255,255,0.7)', textAlign: 'right' }}>
+            Tap <span style={{ fontSize: 16 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', margin: '0 2px' }}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></span><br/>
+            then <b>Add to Home Screen</b>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={dismiss}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.5)',
+                borderRadius: 10,
+                padding: '8px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Not now
+            </button>
+            <button
+              onClick={handleInstall}
+              disabled={installing}
+              style={{
+                background: '#E8310A',
+                border: 'none',
+                color: '#fff',
+                borderRadius: 10,
+                padding: '8px 16px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: installing ? 'wait' : 'pointer',
+                fontFamily: 'inherit',
+                animation: 'installPulse 2s infinite',
+                opacity: installing ? 0.7 : 1,
+              }}
+            >
+              {installing ? 'Installing…' : 'Install'}
+            </button>
+          </div>
+        )}
       </div>
+      {isIosPrompt && (
+         <button onClick={dismiss} style={{ position: 'absolute', top: 6, right: 10, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 20, cursor: 'pointer' }}>×</button>
+      )}
     </div>
   )
 }

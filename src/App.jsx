@@ -110,12 +110,8 @@ export default function App() {
     })
   }, [])
 
-  useEffect(() => {
-    // Request desktop notification permissions on initial load
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission()
-    }
-  }, [])
+  // Requesting desktop notification permissions automatically on load is removed
+  // because iOS Safari requires it to be triggered by a manual user action (button click).
 
   useEffect(() => {
     if (!authChecked) return
