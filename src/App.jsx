@@ -2,6 +2,7 @@
 import { useState, useEffect, Component } from 'react'
 import { Routes, Route, useNavigate, useLocation, Navigate, useParams } from 'react-router-dom'
 import { supabase } from './supabase'
+import { validatePassword, createSessionToken, getAuthRole, clearSession, saveSession } from './auth'
 import LoadingScreen from './LoadingScreen'
 import LandingPage from './LandingPage'
 import jwLogo from './assets/jjw.svg'
@@ -33,7 +34,7 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("Uncaught error:", error, errorInfo)
+    if (import.meta.env.DEV) console.error("Uncaught error:", error, errorInfo)
   }
 
   render() {
@@ -93,11 +94,21 @@ export default function App() {
   const location = useLocation()
 
   const [loginError, setLoginError] = useState('')
-  const [isManager, setIsManager]   = useState(() => localStorage.getItem('jw_auth_role') === 'manager')
+  const [isManager, setIsManager]   = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
   const [jobs, setJobs]             = useState([])
   const [mechanics, setMechanics]   = useState([])
   const [dataLoaded, setDataLoaded] = useState(false)
   const [error, setError]           = useState(null)
+
+  // Validate session on mount
+  useEffect(() => {
+    getAuthRole().then(role => {
+      if (role === 'manager') setIsManager(true)
+      else setIsManager(false)
+      setAuthChecked(true)
+    })
+  }, [])
 
   useEffect(() => {
     // Request desktop notification permissions on initial load
@@ -107,12 +118,13 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const role = localStorage.getItem('jw_auth_role')
-
-    if (!role && location.pathname !== '/' && location.pathname !== '/login' && location.pathname !== '/loading') {
-      navigate('/login', { replace: true })
-    }
-  }, [location.pathname, navigate])
+    if (!authChecked) return
+    getAuthRole().then(role => {
+      if (!role && location.pathname !== '/' && location.pathname !== '/login' && location.pathname !== '/loading') {
+        navigate('/login', { replace: true })
+      }
+    })
+  }, [location.pathname, navigate, authChecked])
 
   async function loadData() {
     setError(null)
@@ -134,7 +146,7 @@ export default function App() {
       saveJobsToCache(fetchedJobs)
       if (mechRes.data) saveMechanicsToCache(mechRes.data)
     } catch (err) {
-      console.warn('[App] Network load failed, trying offline cache:', err)
+      if (import.meta.env.DEV) console.warn('[App] Network load failed, trying offline cache:', err)
       // Fall back to IndexedDB
       const cachedJobs = await loadJobsFromCache()
       const cachedMechanics = await loadMechanicsFromCache()
@@ -176,23 +188,28 @@ export default function App() {
 
   // ── ALL FUNCTIONS DEFINED HERE FIRST ──
   /**
-   * Validates the login password and updates the application state.
+   * Validates the login password via SHA-256 hash comparison
+   * and creates an HMAC-signed session token.
    * @param {string} password - The entered password.
+   * @returns {Promise<boolean>} True if login succeeded.
    */
-  function handleLogin(password) {
-  if (password === 'jwtuned2024') {
-    localStorage.setItem('jw_auth_role', 'staff')
-      setLoginError(''); setIsManager(false); navigate('/loading')
-  } else if (password === 'jwmanager2024') {
-    localStorage.setItem('jw_auth_role', 'manager')
-      setLoginError(''); setIsManager(true); navigate('/loading')
-  } else {
-    setLoginError('Wrong password. Try again.')
+  async function handleLogin(password) {
+    const role = await validatePassword(password)
+    if (role) {
+      const token = await createSessionToken(role)
+      saveSession(token)
+      setLoginError('')
+      setIsManager(role === 'manager')
+      navigate('/loading')
+      return true
+    } else {
+      setLoginError('Wrong password. Try again.')
+      return false
+    }
   }
-}
 
   function handleLogout() {
-    localStorage.removeItem('jw_auth_role')
+    clearSession()
     setIsManager(false)
     setDataLoaded(false)
     navigate('/login', { replace: true })
@@ -215,11 +232,11 @@ export default function App() {
 
     if (editId) {
       const { error } = await supabase.from('jobs').update(row).eq('id', id)
-      if (error) { alert('Error: ' + error.message); return }
+      if (error) { if (import.meta.env.DEV) console.error('Job update error:', error); alert('Failed to update job. Please try again.'); return }
       setJobs(p => p.map(j => j.id === id ? fromDb(row) : j))
     } else {
       const { error } = await supabase.from('jobs').insert(row)
-      if (error) { alert('Error: ' + error.message); return }
+      if (error) { if (import.meta.env.DEV) console.error('Job insert error:', error); alert('Failed to save job. Please try again.'); return }
       setJobs(p => [fromDb(row), ...p])
     }
     navigate('/dashboard')
@@ -236,7 +253,7 @@ export default function App() {
     }
     if (!window.confirm('Delete this job card?')) return false
     const { error } = await supabase.from('jobs').delete().eq('id', job.id)
-    if (error) { alert('Error: ' + error.message); return false }
+    if (error) { if (import.meta.env.DEV) console.error('Job delete error:', error); alert('Failed to delete job. Please try again.'); return false }
     setJobs(p => p.filter(j => j.id !== job.id))
     return true
   }
@@ -261,7 +278,7 @@ export default function App() {
     }
 
     const { error } = await supabase.from('jobs').update(updateFields).eq('id', id)
-    if (error) { alert('Error: ' + error.message); return false }
+    if (error) { if (import.meta.env.DEV) console.error('Status update error:', error); alert('Failed to update status. Please try again.'); return false }
     
     // Auto-send WhatsApp message on status change to 'Delivered'
     if (job && status === 'Delivered') {
@@ -287,7 +304,7 @@ export default function App() {
   }
   // Update job
   const { error } = await supabase.from('jobs').update({ mechanic: mechanicName }).eq('id', jobId)
-  if (error) { alert('Error: ' + error.message); return }
+  if (error) { if (import.meta.env.DEV) console.error('Assign mechanic error:', error); alert('Failed to assign mechanic. Please try again.'); return }
   setJobs(p => p.map(j => j.id === jobId ? { ...j, mechanic: mechanicName } : j))
 }
 

@@ -25,7 +25,7 @@ export default function JobCardForm({ initialData, onSave, onBack, mechanics, is
   const [form, setForm] = useState(() => {
     const saved = localStorage.getItem(`jw_draft_form_${draftId}`)
     if (saved) {
-      try { return JSON.parse(saved) } catch (e) { console.error('Failed to parse draft', e) }
+      try { return JSON.parse(saved) } catch (e) { if (import.meta.env.DEV) console.error('Failed to parse draft', e) }
     }
     return initialData ? { ...initialData } : { ...emptyForm }
   })

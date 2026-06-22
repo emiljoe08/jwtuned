@@ -56,7 +56,7 @@ export async function saveJobsToCache(jobs) {
     await setItem('jobs', jobs)
     await setItem('jobs_synced_at', new Date().toISOString())
   } catch (e) {
-    console.warn('[offlineCache] Failed to save jobs:', e)
+    if (import.meta.env.DEV) console.warn('[offlineCache] Failed to save jobs:', e)
   }
 }
 
@@ -68,7 +68,7 @@ export async function loadJobsFromCache() {
   try {
     return (await getItem('jobs')) || []
   } catch (e) {
-    console.warn('[offlineCache] Failed to load jobs:', e)
+    if (import.meta.env.DEV) console.warn('[offlineCache] Failed to load jobs:', e)
     return []
   }
 }
@@ -81,7 +81,7 @@ export async function saveMechanicsToCache(mechanics) {
   try {
     await setItem('mechanics', mechanics)
   } catch (e) {
-    console.warn('[offlineCache] Failed to save mechanics:', e)
+    if (import.meta.env.DEV) console.warn('[offlineCache] Failed to save mechanics:', e)
   }
 }
 
@@ -93,7 +93,7 @@ export async function loadMechanicsFromCache() {
   try {
     return (await getItem('mechanics')) || []
   } catch (e) {
-    console.warn('[offlineCache] Failed to load mechanics:', e)
+    if (import.meta.env.DEV) console.warn('[offlineCache] Failed to load mechanics:', e)
     return []
   }
 }
@@ -123,6 +123,6 @@ export async function clearCache() {
       tx.onerror = () => reject(tx.error)
     })
   } catch (e) {
-    console.warn('[offlineCache] Failed to clear cache:', e)
+    if (import.meta.env.DEV) console.warn('[offlineCache] Failed to clear cache:', e)
   }
 }

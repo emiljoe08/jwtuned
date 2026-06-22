@@ -261,8 +261,7 @@ const KanbanCard = memo(function KanbanCard({ job, mechanics, onStatusChange, on
         const msg = `🚨 *Timer Run Out Alert*\n\nJob Card: *${job.id}*\nCustomer: ${job.customerName}\nVehicle: ${job.regNumber} (${job.makeModel})\nMechanic: ${job.mechanic || 'Unassigned'}\n\nThis job has run over its estimated completion time of *${duration} minutes*! 🕒`
         window.open(`https://wa.me/919447403837?text=${encodeURIComponent(msg)}`, '_blank')
       } catch (err) {
-        console.warn("Failed to set timerAlertSent status in DB:", err)
-      }
+        if (import.meta.env.DEV) console.warn("Failed to set timerAlertSent status in DB:", err)      }
     }
 
     updateTimer()

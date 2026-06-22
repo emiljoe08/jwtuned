@@ -27,18 +27,24 @@ export default function FeedbackScreen() {
       try {
         const { data, error: fetchError } = await supabase
           .from('jobs')
-          .select('*')
+          .select('id, customer_name, phone, address, vehicle_type, reg_number, make_model, year, fuel, odometer, complaint, mechanic, delivery_time, status, photos, inspection, created_at')
           .eq('id', id)
           .single()
         
         if (fetchError) throw fetchError
         if (data) {
-          setJob(fromDb(data))
+          const loaded = fromDb(data)
+          setJob(loaded)
+          // Idempotency: if feedback was already submitted, show the thank-you screen
+          if (loaded.inspection?.feedback?.submittedAt) {
+            setSubmitted(true)
+          }
         } else {
           setError('Job card not found.')
         }
       } catch (err) {
-        setError(err.message || 'Error loading job details.')
+        if (import.meta.env.DEV) console.error('[FeedbackScreen] Load error:', err)
+        setError('Error loading job details.')
       } finally {
         setLoading(false)
       }
@@ -72,7 +78,8 @@ export default function FeedbackScreen() {
       if (updateError) throw updateError
       setSubmitted(true)
     } catch (err) {
-      alert('Failed to submit feedback: ' + (err.message || err))
+      if (import.meta.env.DEV) console.error('[FeedbackScreen] Submit error:', err)
+      alert('Failed to submit feedback. Please try again later.')
     } finally {
       setSubmitting(false)
     }
@@ -291,6 +298,7 @@ export default function FeedbackScreen() {
               placeholder="Tell us about the service quality, transparency, parts quality, or communication..."
               value={comment}
               onChange={e => setComment(e.target.value)}
+              maxLength={500}
             />
           </div>
 

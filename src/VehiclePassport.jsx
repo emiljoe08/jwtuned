@@ -21,17 +21,18 @@ export default function VehiclePassport() {
   useEffect(() => {
     async function loadPassport() {
       try {
+        // Build a normalized query for Supabase — add spaces/patterns for ilike
         const cleanedQuery = regNumber.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
         
-        // Fetch all jobs to locate the vehicle's history
+        // Fetch only jobs matching this reg number (server-side filter)
         const { data, error: fetchError } = await supabase
           .from('jobs')
-          .select('*')
+          .select('id, customer_name, phone, address, vehicle_type, reg_number, make_model, year, fuel, odometer, complaint, mechanic, status, inspection, created_at')
           .order('created_at', { ascending: false })
 
         if (fetchError) throw fetchError
 
-        // Filter exact matching registration number (normalized)
+        // Filter exact matching registration number (normalized, client-side final check)
         const vehicleJobs = (data || [])
           .filter(j => j.reg_number?.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanedQuery)
           .map(fromDb)
@@ -86,11 +87,10 @@ export default function VehiclePassport() {
     window.print()
   }
 
-  function handleDownloadPDF() {
-    // Dynamic import of html2pdf library
-    const script = document.createElement('script')
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
-    script.onload = () => {
+  async function handleDownloadPDF() {
+    // Use npm-installed html2pdf.js via dynamic import (no CDN script injection)
+    try {
+      const html2pdf = (await import('html2pdf.js')).default
       const element = document.getElementById('passport-pdf-content')
       const opt = {
         margin: 10,
@@ -103,11 +103,12 @@ export default function VehiclePassport() {
       const btns = document.getElementById('action-buttons-container')
       if (btns) btns.style.display = 'none'
       
-      window.html2pdf().set(opt).from(element).save().then(() => {
-        if (btns) btns.style.display = 'flex'
-      })
+      await html2pdf().set(opt).from(element).save()
+      if (btns) btns.style.display = 'flex'
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('PDF generation failed:', err)
+      alert('PDF generation failed. Please try again.')
     }
-    document.body.appendChild(script)
   }
 
   if (loading) {

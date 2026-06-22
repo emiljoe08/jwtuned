@@ -38,7 +38,7 @@ async function generateBookingId() {
       return `JW-${new Date().getFullYear()}-${String(lastNum + 1).padStart(4, '0')}`
     }
   } catch (e) {
-    console.warn('[BookingForm] Failed to fetch last ID:', e)
+    if (import.meta.env.DEV) console.warn('[BookingForm] Failed to fetch last ID:', e)
   }
   // Fallback
   return `JW-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`
@@ -64,6 +64,7 @@ export default function BookingForm() {
   const [submitting, setSubmitting] = useState(false)
   const [status, setStatus] = useState('idle') // idle | success | error
   const [errorMsg, setErrorMsg] = useState('')
+  const [lastSubmitTime, setLastSubmitTime] = useState(0)
 
   function handleChange(field, value) {
     setForm(p => ({ ...p, [field]: value }))
@@ -73,9 +74,13 @@ export default function BookingForm() {
   function validate() {
     const e = {}
     if (!form.name.trim()) e.name = 'Name is required'
+    else if (form.name.trim().length > 100) e.name = 'Name is too long'
     if (!form.phone.trim()) e.phone = 'Phone is required'
+    else if (!/^\+?[\d\s-]{10,20}$/.test(form.phone.trim())) e.phone = 'Enter a valid phone number'
     if (!form.regNumber.trim()) e.regNumber = 'Registration number is required'
+    else if (form.regNumber.trim().length > 20) e.regNumber = 'Registration number is too long'
     if (!form.makeModel.trim()) e.makeModel = 'Make & model is required'
+    else if (form.makeModel.trim().length > 100) e.makeModel = 'Make & model is too long'
     if (!form.date) e.date = 'Please pick a date'
     if (!form.timeSlot) e.timeSlot = 'Please pick a time slot'
     setErrors(e)
@@ -85,6 +90,11 @@ export default function BookingForm() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!validate()) return
+
+    // Rate-limit: prevent resubmission within 5 seconds
+    const now = Date.now()
+    if (now - lastSubmitTime < 5000) return
+    setLastSubmitTime(now)
 
     setSubmitting(true)
     setErrorMsg('')
@@ -121,8 +131,8 @@ export default function BookingForm() {
       if (error) throw error
       setStatus('success')
     } catch (err) {
-      console.error('[BookingForm] Insert failed:', err)
-      setErrorMsg(err.message || 'Something went wrong. Please try again.')
+      if (import.meta.env.DEV) console.error('[BookingForm] Insert failed:', err)
+      setErrorMsg('Something went wrong. Please try again later.')
       setStatus('error')
     }
     setSubmitting(false)
@@ -226,6 +236,7 @@ export default function BookingForm() {
               placeholder="Your full name"
               value={form.name}
               onChange={e => handleChange('name', e.target.value)}
+              maxLength={100}
             />
             {errors.name && <div className="bf-error-text">{errors.name}</div>}
           </div>
@@ -237,6 +248,7 @@ export default function BookingForm() {
               value={form.phone}
               onChange={e => handleChange('phone', e.target.value)}
               inputMode="tel"
+              maxLength={20}
             />
             {errors.phone && <div className="bf-error-text">{errors.phone}</div>}
           </div>
@@ -274,6 +286,7 @@ export default function BookingForm() {
               value={form.regNumber}
               onChange={e => handleChange('regNumber', e.target.value.toUpperCase())}
               style={{ fontFamily: 'monospace', letterSpacing: '0.08em', fontWeight: 600 }}
+              maxLength={20}
             />
             {errors.regNumber && <div className="bf-error-text">{errors.regNumber}</div>}
           </div>
@@ -284,6 +297,7 @@ export default function BookingForm() {
               placeholder="Maruti Swift Dzire"
               value={form.makeModel}
               onChange={e => handleChange('makeModel', e.target.value)}
+              maxLength={100}
             />
             {errors.makeModel && <div className="bf-error-text">{errors.makeModel}</div>}
           </div>
@@ -313,6 +327,7 @@ export default function BookingForm() {
             value={form.notes}
             onChange={e => handleChange('notes', e.target.value)}
             style={{ height: 80, padding: '14px 16px', resize: 'none' }}
+            maxLength={500}
           />
         </div>
 

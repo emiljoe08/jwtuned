@@ -18,7 +18,7 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/sw.js')
       .then((reg) => {
-        console.log('[SW] Registered, scope:', reg.scope)
+        if (import.meta.env.DEV) console.log('[SW] Registered, scope:', reg.scope)
 
         // When a new SW is available, auto-activate it
         reg.addEventListener('updatefound', () => {
@@ -26,12 +26,12 @@ if ('serviceWorker' in navigator) {
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'activated') {
-                console.log('[SW] New version activated')
+                if (import.meta.env.DEV) console.log('[SW] New version activated')
               }
             })
           }
         })
       })
-      .catch((err) => console.warn('[SW] Registration failed:', err))
+      .catch((err) => { if (import.meta.env.DEV) console.warn('[SW] Registration failed:', err) })
   })
 }

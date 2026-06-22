@@ -173,7 +173,7 @@ export default function ServiceReminders({ onBack }) {
       // Refresh list to move the vehicle to snoozed list
       loadReminders()
     } catch (err) {
-      console.warn("Failed to save reminder sent state to DB:", err)
+      if (import.meta.env.DEV) console.warn("Failed to save reminder sent state to DB:", err)
     }
   }
 

@@ -187,7 +187,7 @@ export default function LandingPage({ onEnter }) {
           setDbTestimonials(loaded)
         }
       } catch (err) {
-        console.warn("Failed to fetch dynamic testimonials:", err)
+        if (import.meta.env.DEV) console.warn("Failed to fetch dynamic testimonials:", err)
       }
     }
     fetchTestimonials()

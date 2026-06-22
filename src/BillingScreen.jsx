@@ -15,7 +15,7 @@ export default function BillingScreen({ job, onBack }) {
   const getDraft = () => {
     const saved = localStorage.getItem(`jw_draft_bill_${draftId}`)
     if (saved) {
-      try { return JSON.parse(saved) } catch (e) { console.error('Failed to parse bill draft', e) }
+      try { return JSON.parse(saved) } catch (e) { if (import.meta.env.DEV) console.error('Failed to parse bill draft', e) }
     }
     return {}
   }

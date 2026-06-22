@@ -14,15 +14,14 @@ export default function LoginScreen({ onLogin, onBack, error }) {
    * Handles the login form submission and applies a shake effect on incorrect attempts.
    * @param {Event} e - The form submission event.
    */
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     if (password.trim() === '') return
-    const correct = password === 'jwtuned2024'
-    if (!correct) {
+    const success = await onLogin(password)
+    if (!success) {
       setShaking(true)
       setTimeout(() => setShaking(false), 500)
     }
-    onLogin(password)
   }
 
   return (
