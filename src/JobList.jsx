@@ -26,6 +26,19 @@ export default function JobList({ onNew, onEdit, onBill, onInspect, onDelete, on
   const [notifPerm, setNotifPerm] = useState(
     'Notification' in window ? Notification.permission : 'denied'
   )
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   function requestNotifications() {
     if (!('Notification' in window)) return
@@ -189,10 +202,8 @@ export default function JobList({ onNew, onEdit, onBill, onInspect, onDelete, on
   return (
     <div style={{ width: '100%', margin: '0 auto', minHeight: '100vh', background: '#050505' }}>
       <style>{`
-        .stats-grid { grid-template-columns: repeat(4, 1fr); }
         .joblist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 16px; }
         @media (max-width: 640px) {
-          .stats-grid { grid-template-columns: repeat(2, 1fr); }
           .joblist-header { flex-direction: column; align-items: flex-start; }
           .joblist-actions { width: 100%; justify-content: flex-start; }
         }
@@ -224,48 +235,100 @@ export default function JobList({ onNew, onEdit, onBill, onInspect, onDelete, on
         </div>
       )}
 
-      <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '20px 5% 24px' }}>
-        <div className="joblist-header">
-          <div>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src={jwLogo} alt="Logo" style={{ width: 24, height: 24, objectFit: 'contain' }} />
-              JW Tuned
+      <div style={{ background: '#0A0A0A', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 5% 24px' }}>
+          <div className="joblist-header">
+            <div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <img src={jwLogo} alt="Logo" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                JW Tuned
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 }}>Garage Management</div>
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 }}>Garage Management</div>
-          </div>
-          <div className="joblist-actions" style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-            <button onClick={handleRefresh} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', borderRadius:10, width:36, height:36, fontSize:16, cursor:'pointer' }}>↻</button>
-            {notifPerm === 'default' && (
-              <button onClick={requestNotifications} style={{ background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>🔔 Enable Notifs</button>
-            )}
-            {isManager && (
-              <button onClick={onManagerView} style={{ background:'rgba(232,49,10,0.1)', border:'1px solid rgba(232,49,10,0.3)', color:'#E8310A', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📊 Manager</button>
-            )}
-            {isManager && (
-              <button onClick={() => onScreen('reports')} style={{ background:'rgba(252,211,77,0.1)', border:'1px solid rgba(252,211,77,0.2)', color:'#FCD34D', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>📈 Reports</button>
-            )}
-            <button onClick={() => onScreen('history')} style={{ background:'rgba(147,197,253,0.1)', border:'1px solid rgba(147,197,253,0.2)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>🔍 History</button>
-            <button onClick={() => onScreen('reminders')} style={{ background:'rgba(110,231,183,0.1)', border:'1px solid rgba(110,231,183,0.2)', color:'#6EE7B7', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>⏰ Reminders</button>
-            <button onClick={onNew} style={{ background:'#fff', color:'#050505', border:'none', borderRadius:10, padding:'8px 16px', fontWeight:600, fontSize:13, cursor:'pointer' }}>+ New Job</button>
-            <button onClick={onLogout} style={{ background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', color:'#F87171', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft: 8 }}>🚪 Logout</button>
-          </div>
-        </div>
-        <div className="stats-grid" style={{ display: 'grid', gap: 8 }}>
-          {[
-            { label: 'Total',   value: stats.total,      color: '#fff' },
-            { label: 'Waiting', value: stats.waiting,    color: '#fff' },
-            { label: 'Active',  value: stats.inProgress, color: '#fff' },
-            { label: 'Ready',   value: stats.ready,      color: '#fff' },
-          ].map(s => (
-            <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 4px', textAlign: 'center' }}>
-              <div style={{ color: s.color, fontWeight: 600, fontSize: 20 }}>{s.value}</div>
-              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginTop: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
+            
+            <div className="joblist-actions" style={{ display:'flex', gap:8, alignItems: 'center' }}>
+              {notifPerm === 'default' && (
+                <button onClick={requestNotifications} style={{ background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', color:'#93C5FD', borderRadius:10, padding:'8px 12px', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>🔔 Enable Notifs</button>
+              )}
+              <button onClick={handleRefresh} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', borderRadius:10, width:36, height:36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize:16, cursor:'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseOut={e => e.currentTarget.style.background='rgba(255,255,255,0.05)'}>↻</button>
+              
+              <button onClick={onNew} style={{ background:'#fff', color:'#050505', border:'none', borderRadius:10, padding:'8px 16px', fontWeight:600, fontSize:13, cursor:'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(255,255,255,0.15)', transition: 'transform 0.1s' }} onMouseDown={e => e.currentTarget.style.transform='scale(0.96)'} onMouseUp={e => e.currentTarget.style.transform='scale(1)'} onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}>
+                <span style={{ fontSize: 16 }}>+</span> New Job
+              </button>
+
+              {/* Dropdown Menu */}
+              <div ref={menuRef} style={{ position: 'relative' }}>
+                <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: menuOpen ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', borderRadius:10, width:36, height:36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize:14, cursor:'pointer', transition: 'background 0.2s' }}>
+                  ⋮
+                </button>
+
+                {menuOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: 8,
+                    background: 'rgba(20,20,20,0.95)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 12,
+                    padding: 6,
+                    width: 200,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                    zIndex: 100,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    animation: 'menuFadeIn 0.15s ease-out'
+                  }}>
+                    <style>{`
+                      @keyframes menuFadeIn {
+                        from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+                        to { opacity: 1; transform: translateY(0) scale(1); }
+                      }
+                      .dropdown-item {
+                        background: transparent; border: none; padding: 10px 12px; border-radius: 8px; text-align: left; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.1s; display: flex; alignItems: center; gap: 8px; color: #fff;
+                      }
+                      .dropdown-item:hover { background: rgba(255,255,255,0.08); }
+                    `}</style>
+                    
+                    {isManager && (
+                      <>
+                        <button className="dropdown-item" onClick={() => { setMenuOpen(false); onManagerView(); }}><span style={{ opacity: 0.8 }}>📊</span> Manager Dashboard</button>
+                        <button className="dropdown-item" onClick={() => { setMenuOpen(false); onScreen('reports'); }}><span style={{ opacity: 0.8 }}>📈</span> Revenue Reports</button>
+                        <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                      </>
+                    )}
+                    
+                    <button className="dropdown-item" onClick={() => { setMenuOpen(false); onScreen('history'); }}><span style={{ opacity: 0.8 }}>🔍</span> Customer History</button>
+                    <button className="dropdown-item" onClick={() => { setMenuOpen(false); onScreen('reminders'); }}><span style={{ opacity: 0.8 }}>⏰</span> Service Reminders</button>
+                    
+                    <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                    <button className="dropdown-item" onClick={() => { setMenuOpen(false); onLogout(); }} style={{ color: '#F87171' }}><span style={{ opacity: 0.8 }}>🚪</span> Logout</button>
+                  </div>
+                )}
+              </div>
             </div>
-          ))}
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginTop: 24 }}>
+            {[
+              { label: 'Total',   value: stats.total,      color: '#fff', bg: 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))', border: 'rgba(255,255,255,0.1)' },
+              { label: 'Waiting', value: stats.waiting,    color: STATUS['Waiting'].dot, bg: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.01))', border: 'rgba(245,158,11,0.15)' },
+              { label: 'Active',  value: stats.inProgress, color: STATUS['In Progress'].dot, bg: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.01))', border: 'rgba(59,130,246,0.15)' },
+              { label: 'Ready',   value: stats.ready,      color: STATUS['Ready'].dot, bg: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.01))', border: 'rgba(16,185,129,0.15)' },
+            ].map(s => (
+              <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 12, padding: '12px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ color: s.color, fontWeight: 700, fontSize: 24 }}>{s.value}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div style={{ padding: '0 5% 24px', marginTop: -8 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 5% 24px', marginTop: -8 }}>
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 12, scrollbarWidth: 'none' }}>
           {tabs.map(t => {
             const count  = t === 'All' ? stats.total : t === 'Waiting' ? stats.waiting : t === 'In Progress' ? stats.inProgress : t === 'Ready' ? stats.ready : 0
