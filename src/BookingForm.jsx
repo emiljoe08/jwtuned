@@ -14,6 +14,18 @@ const TIME_SLOTS = [
 
 const MAX_PER_SLOT = 2
 
+// Maps each slot label to its start hour (24h format) for past-slot detection
+const SLOT_START_HOUR = {
+  '9 – 10 AM': 9,
+  '10 – 11 AM': 10,
+  '11 AM – 12 PM': 11,
+  '12 – 1 PM': 12,
+  '2 – 3 PM': 14,
+  '3 – 4 PM': 15,
+  '4 – 5 PM': 16,
+  '5 – 6 PM': 17,
+}
+
 const SERVICE_TYPES = [
   { value: 'Full Service', label: '⚙️ Full Service' },
   { value: 'Custom Exhausts & Headers', label: '💨 Custom Exhausts & Headers' },
@@ -425,18 +437,25 @@ export default function BookingForm() {
                 const count = bookedSlots[slot] || 0
                 const isFull = count >= MAX_PER_SLOT
                 const spotsLeft = MAX_PER_SLOT - count
+
+                // Check if this slot has already passed (only relevant for today)
+                const isToday = form.date === today
+                const now = new Date()
+                const isPast = isToday && SLOT_START_HOUR[slot] <= now.getHours()
+                const isDisabled = isFull || isPast
+
                 return (
                   <button
                     key={slot}
                     type="button"
-                    disabled={isFull}
-                    className={`slot-chip ${form.timeSlot === slot ? 'active' : ''} ${isFull ? 'slot-full' : ''}`}
+                    disabled={isDisabled}
+                    className={`slot-chip ${form.timeSlot === slot ? 'active' : ''} ${isDisabled ? 'slot-full' : ''}`}
                     onClick={() => {
-                      if (isFull) return
+                      if (isDisabled) return
                       handleChange('timeSlot', slot)
                       if (errors.timeSlot) setErrors(p => ({ ...p, timeSlot: '' }))
                     }}
-                    title={isFull ? 'This slot is fully booked' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
+                    title={isPast ? 'This time has already passed' : isFull ? 'This slot is fully booked' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
                   >
                     <span>{slot}</span>
                     {form.date && (
@@ -445,9 +464,9 @@ export default function BookingForm() {
                         fontSize: 10,
                         marginTop: 2,
                         fontWeight: 400,
-                        color: isFull ? 'rgba(239,68,68,0.8)' : count > 0 ? 'rgba(251,191,36,0.9)' : 'rgba(34,197,94,0.8)',
+                        color: isPast ? 'rgba(255,255,255,0.3)' : isFull ? 'rgba(239,68,68,0.8)' : count > 0 ? 'rgba(251,191,36,0.9)' : 'rgba(34,197,94,0.8)',
                       }}>
-                        {isFull ? '✗ Full' : count > 0 ? `${spotsLeft} left` : '✓ Open'}
+                        {isPast ? '⏰ Passed' : isFull ? '✗ Full' : count > 0 ? `${spotsLeft} left` : '✓ Open'}
                       </span>
                     )}
                   </button>
