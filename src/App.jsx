@@ -308,6 +308,22 @@ export default function App() {
     setJobs(p => p.map(j => j.id === jobId ? { ...j, inspection } : j))
   }
 
+  async function addMechanic(name) {
+    if (!name.trim()) return
+    const { data: existing } = await supabase.from('mechanics').select('id').eq('name', name.trim()).single()
+    if (existing) return
+    const { data: newMech, error } = await supabase.from('mechanics').insert({ name: name.trim() }).select().single()
+    if (error) { if (import.meta.env.DEV) console.error('Failed to add mechanic', error); alert('Failed to add mechanic'); return }
+    if (newMech) setMechanics(p => [...p, newMech].sort((a,b) => a.name.localeCompare(b.name)))
+  }
+
+  async function deleteMechanic(id) {
+    if (!window.confirm('Delete this mechanic?')) return
+    const { error } = await supabase.from('mechanics').delete().eq('id', id)
+    if (error) { if (import.meta.env.DEV) console.error('Failed to delete mechanic', error); alert('Failed to delete mechanic'); return }
+    setMechanics(p => p.filter(m => m.id !== id))
+  }
+
   return (
     <ErrorBoundary>
       <InstallPrompt isLoggedIn={dataLoaded} />
@@ -412,6 +428,8 @@ export default function App() {
                 mechanics={mechanics}
                 onStatusChange={updateStatus}
                 onAssign={assignMechanic}
+                onAddMechanic={addMechanic}
+                onDeleteMechanic={deleteMechanic}
                 onBill={(job) => navigate(`/jobs/${job.id}/bill`)}
                 onBack={() => navigate('/dashboard')}
               />

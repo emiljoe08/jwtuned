@@ -11,7 +11,7 @@ const STATUS = {
 
 const STATUSES = ['Waiting', 'In Progress', 'Ready', 'Delivered']
 
-export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAssign, onBill, onBack }) {
+export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAssign, onAddMechanic, onDeleteMechanic, onBill, onBack }) {
   const [view, setView] = useState('kanban') // kanban | workload | unassigned | grouped
 
   const unassigned = jobs.filter(j => !j.mechanic || j.mechanic.trim() === '')
@@ -76,6 +76,7 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
             { key: 'workload', label: '👨‍🔧 Workload' },
             { key: 'unassigned', label: `🔴 Unassigned${unassigned.length > 0 ? ` (${unassigned.length})` : ''}` },
             { key: 'grouped', label: '📂 By Mechanic' },
+            { key: 'staff', label: '👥 Manage Staff' },
           ].map(t => (
             <button key={t.key} className={`mgr-tab${view === t.key ? ' active' : ''}`} onClick={() => setView(t.key)}>
               {t.label}
@@ -189,6 +190,48 @@ export default function ManagerDashboard({ jobs, mechanics, onStatusChange, onAs
                 <GroupBlock key={m.id} name={m.name} jobs={mJobs} mechanics={mechanics} onAssign={onAssign} onStatusChange={onStatusChange} onBill={onBill} onWhatsApp={handleWhatsApp} />
               )
             })}
+          </div>
+        )}
+
+        {/* ── MANAGE STAFF VIEW ── */}
+        {view === 'staff' && (
+          <div style={{ maxWidth: 600, margin: '0 auto', padding: '20px 0' }}>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 20 }}>
+              <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: 16, color: '#fff' }}>Add New Mechanic</h3>
+              <form onSubmit={(e) => {
+                e.preventDefault()
+                const form = e.target
+                const input = form.elements.mechanicName
+                onAddMechanic(input.value)
+                input.value = ''
+              }} style={{ display: 'flex', gap: 8 }}>
+                <input
+                  name="mechanicName"
+                  placeholder="Mechanic name..."
+                  style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 14px', color: '#fff', outline: 'none' }}
+                />
+                <button type="submit" style={{ background: '#E8310A', border: 'none', color: '#fff', padding: '0 20px', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>
+                  Add
+                </button>
+              </form>
+            </div>
+
+            <h3 style={{ marginTop: 32, marginBottom: 16, fontSize: 16, color: '#fff' }}>Current Mechanics ({mechanics.length})</h3>
+            
+            {mechanics.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.3)' }}>No mechanics in the database yet.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {mechanics.map(m => (
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: 8 }}>
+                    <span style={{ fontWeight: 600 }}>{m.name}</span>
+                    <button onClick={() => onDeleteMechanic(m.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#EF4444', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
