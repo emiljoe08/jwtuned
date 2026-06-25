@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './supabase'
 
 const TIME_SLOTS = [
@@ -11,6 +11,8 @@ const TIME_SLOTS = [
   '4 – 5 PM',
   '5 – 6 PM',
 ]
+
+const MAX_PER_SLOT = 2
 
 const SERVICE_TYPES = [
   { value: 'Full Service', label: '⚙️ Full Service' },
@@ -65,6 +67,43 @@ export default function BookingForm() {
   const [status, setStatus] = useState('idle') // idle | success | error
   const [errorMsg, setErrorMsg] = useState('')
   const [lastSubmitTime, setLastSubmitTime] = useState(0)
+  const [bookedSlots, setBookedSlots] = useState({}) // { slotName: count }
+  const [loadingSlots, setLoadingSlots] = useState(false)
+
+  /**
+   * Fetch how many bookings exist per time slot for the selected date.
+   */
+  const fetchBookedSlots = useCallback(async (date) => {
+    if (!date) { setBookedSlots({}); return }
+    setLoadingSlots(true)
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('booking_time_slot')
+        .eq('booking_date', date)
+        .neq('status', 'Cancelled')
+      if (error) throw error
+      const counts = {}
+      ;(data || []).forEach(row => {
+        if (row.booking_time_slot) {
+          counts[row.booking_time_slot] = (counts[row.booking_time_slot] || 0) + 1
+        }
+      })
+      setBookedSlots(counts)
+    } catch (e) {
+      if (import.meta.env.DEV) console.warn('[BookingForm] Failed to fetch slot availability:', e)
+      setBookedSlots({})
+    }
+    setLoadingSlots(false)
+  }, [])
+
+  // Re-fetch slot availability whenever the selected date changes
+  useEffect(() => {
+    fetchBookedSlots(form.date)
+    // Clear selected time slot when date changes so user must re-pick
+    setForm(p => ({ ...p, timeSlot: '' }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.date, fetchBookedSlots])
 
   function handleChange(field, value) {
     setForm(p => ({ ...p, [field]: value }))
@@ -91,6 +130,12 @@ export default function BookingForm() {
     e.preventDefault()
     if (!validate()) return
 
+    // Check if the selected slot is already full (client-side guard)
+    if ((bookedSlots[form.timeSlot] || 0) >= MAX_PER_SLOT) {
+      setErrors(p => ({ ...p, timeSlot: 'This slot is fully booked. Please pick another.' }))
+      return
+    }
+
     // Rate-limit: prevent resubmission within 5 seconds
     const now = Date.now()
     if (now - lastSubmitTime < 5000) return
@@ -99,6 +144,21 @@ export default function BookingForm() {
     setSubmitting(true)
     setErrorMsg('')
     try {
+      // Final server-side conflict check right before insert
+      const { data: existing, error: checkErr } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('booking_date', form.date)
+        .eq('booking_time_slot', form.timeSlot)
+        .neq('status', 'Cancelled')
+      if (checkErr) throw checkErr
+      if (existing && existing.length >= MAX_PER_SLOT) {
+        setErrors(p => ({ ...p, timeSlot: 'This slot was just booked by someone else. Please pick another.' }))
+        await fetchBookedSlots(form.date) // Refresh availability
+        setSubmitting(false)
+        return
+      }
+
       const id = await generateBookingId()
       const complaint = form.serviceType
         ? `${form.serviceType}${form.notes.trim() ? ' — ' + form.notes.trim() : ''}`
@@ -123,6 +183,8 @@ export default function BookingForm() {
         complaint,
         mechanic: '',
         delivery_time: deliveryTime,
+        booking_date: form.date,
+        booking_time_slot: form.timeSlot,
         status: 'Waiting',
         photos: [],
       }
@@ -349,29 +411,66 @@ export default function BookingForm() {
         {/* Time Slot Chips */}
         <div className="bf-field">
           <label className="bf-label">Preferred Time Slot *</label>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: 8,
-          }}>
-            {TIME_SLOTS.map(slot => (
-              <button
-                key={slot}
-                type="button"
-                className={`slot-chip ${form.timeSlot === slot ? 'active' : ''}`}
-                onClick={() => {
-                  handleChange('timeSlot', slot)
-                  if (errors.timeSlot) setErrors(p => ({ ...p, timeSlot: '' }))
-                }}
-              >
-                {slot}
-              </button>
-            ))}
-          </div>
+          {loadingSlots ? (
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, padding: '12px 0' }}>
+              ⏳ Checking availability...
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 8,
+            }}>
+              {TIME_SLOTS.map(slot => {
+                const count = bookedSlots[slot] || 0
+                const isFull = count >= MAX_PER_SLOT
+                const spotsLeft = MAX_PER_SLOT - count
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    disabled={isFull}
+                    className={`slot-chip ${form.timeSlot === slot ? 'active' : ''} ${isFull ? 'slot-full' : ''}`}
+                    onClick={() => {
+                      if (isFull) return
+                      handleChange('timeSlot', slot)
+                      if (errors.timeSlot) setErrors(p => ({ ...p, timeSlot: '' }))
+                    }}
+                    title={isFull ? 'This slot is fully booked' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
+                  >
+                    <span>{slot}</span>
+                    {form.date && (
+                      <span style={{
+                        display: 'block',
+                        fontSize: 10,
+                        marginTop: 2,
+                        fontWeight: 400,
+                        color: isFull ? 'rgba(239,68,68,0.8)' : count > 0 ? 'rgba(251,191,36,0.9)' : 'rgba(34,197,94,0.8)',
+                      }}>
+                        {isFull ? '✗ Full' : count > 0 ? `${spotsLeft} left` : '✓ Open'}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
           {errors.timeSlot && <div className="bf-error-text">{errors.timeSlot}</div>}
           <style>{`
             @media (max-width: 600px) {
               .slot-chip { font-size: 11px !important; padding: 8px 6px !important; }
+            }
+            .slot-chip.slot-full {
+              opacity: 0.4;
+              cursor: not-allowed !important;
+              text-decoration: line-through;
+              border-color: rgba(239,68,68,0.2) !important;
+              background: rgba(239,68,68,0.05) !important;
+            }
+            .slot-chip.slot-full:hover {
+              border-color: rgba(239,68,68,0.2) !important;
+              color: rgba(255,255,255,0.4) !important;
+              background: rgba(239,68,68,0.05) !important;
             }
           `}</style>
         </div>
